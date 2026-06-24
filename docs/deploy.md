@@ -19,6 +19,19 @@ Use `LOVABLE_API_KEY` ou `OPENAI_API_KEY`; o app prioriza Lovable quando as duas
 `SUPABASE_SERVICE_ROLE_KEY` so deve existir no servidor quando houver rotinas administrativas.
 Nunca exponha essa chave no cliente.
 
+## Vercel
+
+O deploy usa `vercel.json` para forcar o build do TanStack Start/Nitro com preset da Vercel:
+
+```json
+{
+  "buildCommand": "NITRO_PRESET=vercel npm run build",
+  "installCommand": "npm install"
+}
+```
+
+Na tela do projeto da Vercel, deixe o Build Command automatico ou igual ao do arquivo.
+
 ## Persistencia gradual
 
 O app continua salvando em `localStorage` para compatibilidade. Quando o usuario estiver
