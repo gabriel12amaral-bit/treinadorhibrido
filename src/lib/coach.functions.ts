@@ -22,30 +22,18 @@ const CoachInput = z.object({
 export const askCoach = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => CoachInput.parse(d))
   .handler(async ({ data }) => {
-    const ai = getAIGateway("askCoach");
+    return {
+      reply: `🔒 Coach IA Premium
 
-    const system = `Você é o Treinador Virtual do app — um personal trainer experiente em musculação e treino híbrido. 
-Responda em português brasileiro, direto, sem rodeios. Use markdown leve quando útil (listas, negrito).
-Você pode:
-- Explicar como executar exercícios (séries, reps, descanso, dicas e erros).
-- Sugerir progressão de carga (+2.5kg em isoladores, +5kg em compostos pesados quando o usuário atinge o topo da faixa de reps).
-- Detectar estagnação (3+ semanas sem progresso num composto) e recomendar deload (semana com -40% de volume).
-- Ajustar volume conforme fadiga / sono / humor relatado.
-- Sugerir alterações no plano atual quando fizer sentido.
-- Comparar evolução semanal/mensal usando os dados fornecidos.
+Este recurso está disponível apenas para assinantes Premium.
 
-Contexto do atleta (JSON):
-${JSON.stringify(data.context, null, 2)}
+✨ O que você desbloqueia:
+• Análise inteligente dos seus treinos
+• Sugestões de progressão de carga
+• Correção de execução de exercícios
+• Ajustes automáticos de volume e intensidade
+• Recomendações personalizadas
 
-Regras:
-- Seja específico: cite o exercício, a carga e a meta concreta.
-- Não invente histórico que não esteja no contexto.
-- Se o usuário pedir algo perigoso (carga absurda, treino com lesão grave), recuse e oriente.`;
-
-    const { text } = await generateText({
-      model: ai.gateway(ai.model("coach")),
-      system,
-      messages: data.messages,
-    }).catch((error) => rethrowAIError("askCoach", error));
-    return { reply: text };
+🚀 Assine o Premium para liberar o Coach IA completo e receber orientação personalizada para acelerar seus resultados.`
+    };
   });
