@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320" role="img" aria-labelledby="title desc">
+  <title id="title">Supino Reto Halteres</title>
+  <desc id="desc">Animacao demonstrativa para Supino Reto Halteres.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0f172a"/><stop offset="1" stop-color="#111827"/></linearGradient>
+    <radialGradient id="accent" cx="50%" cy="35%" r="65%"><stop offset="0" stop-color="#22c55e" stop-opacity="0.45"/><stop offset="1" stop-color="#2563eb" stop-opacity="0.08"/></radialGradient>
+    <style>
+      .rep{transform-origin:160px 160px;animation:rep 1.45s ease-in-out infinite alternate}.pull{animation-name:pull}.squat{animation-name:squat}.hinge{animation-name:hinge}.lunge{animation-name:lunge}.core{animation-name:core}.calf{animation-name:calf}.curl{animation-name:curl}.triceps{animation-name:triceps}.shoulder{animation-name:shoulder}.push{animation-name:push}@keyframes pull{to{transform:translateY(28px)}}@keyframes squat{to{transform:translateY(22px) scaleY(.94)}}@keyframes hinge{to{transform:rotate(-10deg) translateX(-8px)}}@keyframes lunge{to{transform:translateX(18px) translateY(12px)}}@keyframes core{to{transform:translateY(-8px)}}@keyframes calf{to{transform:translateY(-16px)}}@keyframes curl{to{transform:rotate(-14deg)}}@keyframes triceps{to{transform:translateY(18px)}}@keyframes shoulder{to{transform:translateY(-20px)}}@keyframes push{to{transform:translateY(-18px)}}
+    </style>
+  </defs>
+  <rect width="320" height="320" rx="28" fill="url(#bg)"/>
+  <rect width="320" height="320" rx="28" fill="url(#accent)"/>
+  <circle cx="262" cy="68" r="34" fill="#22c55e" opacity="0.18"/>
+  <circle cx="62" cy="244" r="42" fill="#2563eb" opacity="0.18"/>
+  
+  <circle cx="160" cy="92" r="16" fill="#f8fafc"/>
+  <line x1="160" y1="110" x2="160" y2="168" stroke="#f8fafc" stroke-width="11" stroke-linecap="round"/>
+  <line x1="160" y1="168" x2="132" y2="222" stroke="#f8fafc" stroke-width="10" stroke-linecap="round"/>
+  <line x1="160" y1="168" x2="188" y2="222" stroke="#f8fafc" stroke-width="10" stroke-linecap="round"/><g class="rep push"><line x1="128" y1="122" x2="88" y2="134" stroke="#f8fafc" stroke-width="10" stroke-linecap="round"/><line x1="192" y1="122" x2="232" y2="134" stroke="#f8fafc" stroke-width="10" stroke-linecap="round"/><line x1="78" y1="134" x2="242" y2="134" stroke="#22c55e" stroke-width="8" stroke-linecap="round"/></g>
+  <rect x="24" y="260" width="272" height="36" rx="12" fill="#020617" opacity="0.62"/>
+  <text x="160" y="282" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" font-weight="700" fill="#f8fafc">Supino Reto Halteres</text>
+  <text x="160" y="302" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#cbd5e1">Pressao horizontal</text>
+</svg>

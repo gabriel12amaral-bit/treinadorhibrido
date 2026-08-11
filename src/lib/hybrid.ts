@@ -1,19 +1,53 @@
+import {
+  createTrainingProgram,
+  normalizeText,
+  pickRecovery,
+  weekdayFromText,
+} from "./domain/training-rules";
+
 // Hybrid Trainer — mock data, exercise database & AI-style plan generator.
 // Replace with Lovable Cloud + AI Gateway later for real persistence and personalization.
 
 export type MuscleGroup =
-  | "Peito" | "Costas" | "Ombros" | "Bíceps" | "Tríceps"
-  | "Quadríceps" | "Posterior" | "Glúteos" | "Panturrilhas" | "Abdômen"
-  | "Antebraço" | "Cardio";
+  | "Peito"
+  | "Costas"
+  | "Ombros"
+  | "Bíceps"
+  | "Tríceps"
+  | "Quadríceps"
+  | "Posterior"
+  | "Glúteos"
+  | "Panturrilhas"
+  | "Abdômen"
+  | "Antebraço"
+  | "Cardio";
 
 export type MovementPattern =
-  | "push-horizontal" | "push-vertical"
-  | "pull-vertical" | "pull-horizontal"
-  | "squat" | "hinge" | "lunge"
-  | "isolation-chest" | "isolation-back" | "isolation-shoulder"
-  | "isolation-biceps" | "isolation-triceps"
-  | "isolation-quad" | "isolation-hamstring" | "isolation-glute" | "isolation-calf"
-  | "core" | "carry" | "cardio";
+  | "push-horizontal"
+  | "push-vertical"
+  | "pull-vertical"
+  | "pull-horizontal"
+  | "squat"
+  | "hinge"
+  | "lunge"
+  | "isolation-chest"
+  | "isolation-back"
+  | "isolation-shoulder"
+  | "isolation-biceps"
+  | "isolation-triceps"
+  | "isolation-quad"
+  | "isolation-hamstring"
+  | "isolation-glute"
+  | "isolation-calf"
+  | "core"
+  | "carry"
+  | "cardio";
+
+export type ExerciseMedia = {
+  type: "video" | "gif" | "image";
+  url: string;
+  thumbnail?: string;
+};
 
 export type Exercise = {
   id: string;
@@ -32,501 +66,2086 @@ export type Exercise = {
   defaultReps?: string;
   defaultRestSec?: number;
   image: string;
+  media?: ExerciseMedia;
 };
 
-type ExInit = Partial<Exercise> & Pick<Exercise, "id" | "name" | "group" | "equipment" | "difficulty">;
-const ex = (e: ExInit): Exercise => ({ description: "", cues: [], mistakes: [], image: "💪", ...e });
+type ExInit = Partial<Exercise> &
+  Pick<Exercise, "id" | "name" | "group" | "equipment" | "difficulty">;
+const ex = (e: ExInit): Exercise => ({
+  description: "",
+  cues: [],
+  mistakes: [],
+  image: "💪",
+  ...e,
+});
 
 export const EXERCISES: Exercise[] = [
   // ============ PEITO (15) ============
-  ex({ id: "supino-reto-barra", name: "Supino Reto Barra", group: "Peito", secondary: ["Tríceps","Ombros"], pattern: "push-horizontal", type: "composto", equipment: "Barra + Banco", difficulty: "Intermediário", image: "🏋️",
+  ex({
+    id: "supino-reto-barra",
+    name: "Supino Reto Barra",
+    group: "Peito",
+    secondary: ["Tríceps", "Ombros"],
+    pattern: "push-horizontal",
+    type: "composto",
+    equipment: "Barra + Banco",
+    difficulty: "Intermediário",
+    image: "🏋️",
     description: "Composto rei do peitoral, recruta tríceps e deltoide anterior.",
-    cues: ["Escápulas retraídas","Pés firmes","Barra na linha do mamilo"],
-    mistakes: ["Quadril levantado","Cotovelos abertos 90°","Saltar a barra no peito"],
-    safety: ["Use sempre presilhas","Tenha um observador para cargas máximas"] }),
-  ex({ id: "supino-reto-halteres", name: "Supino Reto Halteres", group: "Peito", secondary: ["Tríceps","Ombros"], pattern: "push-horizontal", type: "composto", equipment: "Halteres + Banco", difficulty: "Iniciante", image: "🏋️",
+    cues: ["Escápulas retraídas", "Pés firmes", "Barra na linha do mamilo"],
+    mistakes: ["Quadril levantado", "Cotovelos abertos 90°", "Saltar a barra no peito"],
+    safety: ["Use sempre presilhas", "Tenha um observador para cargas máximas"],
+  }),
+  ex({
+    id: "supino-reto-halteres",
+    name: "Supino Reto Halteres",
+    group: "Peito",
+    secondary: ["Tríceps", "Ombros"],
+    pattern: "push-horizontal",
+    type: "composto",
+    equipment: "Halteres + Banco",
+    difficulty: "Iniciante",
+    image: "🏋️",
     description: "Variação com maior amplitude e ativação de estabilizadores.",
-    cues: ["Cotovelos a 45°","Punhos neutros"], mistakes: ["Bater os halteres no topo"] }),
-  ex({ id: "supino-incl-barra", name: "Supino Inclinado Barra", group: "Peito", secondary: ["Ombros","Tríceps"], pattern: "push-horizontal", type: "composto", equipment: "Barra + Banco 30°", difficulty: "Intermediário", image: "📈",
+    cues: ["Cotovelos a 45°", "Punhos neutros"],
+    mistakes: ["Bater os halteres no topo"],
+  }),
+  ex({
+    id: "supino-incl-barra",
+    name: "Supino Inclinado Barra",
+    group: "Peito",
+    secondary: ["Ombros", "Tríceps"],
+    pattern: "push-horizontal",
+    type: "composto",
+    equipment: "Barra + Banco 30°",
+    difficulty: "Intermediário",
+    image: "📈",
     description: "Foco na porção clavicular do peitoral.",
-    cues: ["Banco a 30°","Barra na linha do peito alto"], mistakes: ["Banco muito inclinado vira ombro"] }),
-  ex({ id: "supino-incl-halteres", name: "Supino Inclinado Halteres", group: "Peito", secondary: ["Ombros","Tríceps"], pattern: "push-horizontal", type: "composto", equipment: "Halteres + Banco 30°", difficulty: "Iniciante", image: "💪",
+    cues: ["Banco a 30°", "Barra na linha do peito alto"],
+    mistakes: ["Banco muito inclinado vira ombro"],
+  }),
+  ex({
+    id: "supino-incl-halteres",
+    name: "Supino Inclinado Halteres",
+    group: "Peito",
+    secondary: ["Ombros", "Tríceps"],
+    pattern: "push-horizontal",
+    type: "composto",
+    equipment: "Halteres + Banco 30°",
+    difficulty: "Iniciante",
+    image: "💪",
     description: "Foca na porção clavicular com amplitude maior.",
-    cues: ["Cotovelos a 45°","Descida controlada"], mistakes: ["Banco muito inclinado"] }),
-  ex({ id: "supino-decl-barra", name: "Supino Declinado Barra", group: "Peito", secondary: ["Tríceps"], pattern: "push-horizontal", type: "composto", equipment: "Barra + Banco Declinado", difficulty: "Intermediário", image: "⬇️",
+    cues: ["Cotovelos a 45°", "Descida controlada"],
+    mistakes: ["Banco muito inclinado"],
+  }),
+  ex({
+    id: "supino-decl-barra",
+    name: "Supino Declinado Barra",
+    group: "Peito",
+    secondary: ["Tríceps"],
+    pattern: "push-horizontal",
+    type: "composto",
+    equipment: "Barra + Banco Declinado",
+    difficulty: "Intermediário",
+    image: "⬇️",
     description: "Trabalha a porção inferior do peitoral.",
-    cues: ["Pés travados","Barra na linha do peito inferior"], mistakes: ["Amplitude curta"] }),
-  ex({ id: "supino-maquina", name: "Supino Máquina", group: "Peito", secondary: ["Tríceps"], pattern: "push-horizontal", type: "composto", equipment: "Máquina Supino", difficulty: "Iniciante", image: "🔩",
+    cues: ["Pés travados", "Barra na linha do peito inferior"],
+    mistakes: ["Amplitude curta"],
+  }),
+  ex({
+    id: "supino-maquina",
+    name: "Supino Máquina",
+    group: "Peito",
+    secondary: ["Tríceps"],
+    pattern: "push-horizontal",
+    type: "composto",
+    equipment: "Máquina Supino",
+    difficulty: "Iniciante",
+    image: "🔩",
     description: "Padrão guiado, seguro para iniciantes.",
-    cues: ["Costas apoiadas","Empurrar até quase travar"], mistakes: ["Pegada muito larga"] }),
-  ex({ id: "chest-press", name: "Chest Press", group: "Peito", secondary: ["Tríceps"], pattern: "push-horizontal", type: "composto", equipment: "Máquina", difficulty: "Iniciante", image: "🟦",
+    cues: ["Costas apoiadas", "Empurrar até quase travar"],
+    mistakes: ["Pegada muito larga"],
+  }),
+  ex({
+    id: "chest-press",
+    name: "Chest Press",
+    group: "Peito",
+    secondary: ["Tríceps"],
+    pattern: "push-horizontal",
+    type: "composto",
+    equipment: "Máquina",
+    difficulty: "Iniciante",
+    image: "🟦",
     description: "Empurrar horizontal guiado.",
-    cues: ["Costas no encosto","Movimento controlado"], mistakes: ["Hiperextensão lombar"] }),
-  ex({ id: "crucifixo-reto", name: "Crucifixo Reto", group: "Peito", pattern: "isolation-chest", type: "isolador", equipment: "Halteres + Banco", difficulty: "Iniciante", image: "🦋",
+    cues: ["Costas no encosto", "Movimento controlado"],
+    mistakes: ["Hiperextensão lombar"],
+  }),
+  ex({
+    id: "crucifixo-reto",
+    name: "Crucifixo Reto",
+    group: "Peito",
+    pattern: "isolation-chest",
+    type: "isolador",
+    equipment: "Halteres + Banco",
+    difficulty: "Iniciante",
+    image: "🦋",
     description: "Isolador para peitoral, foco na adução.",
-    cues: ["Leve flexão de cotovelo fixa","Abertura até linha do ombro"], mistakes: ["Cotovelos retos demais","Amplitude excessiva"] }),
-  ex({ id: "crucifixo-incl", name: "Crucifixo Inclinado", group: "Peito", pattern: "isolation-chest", type: "isolador", equipment: "Halteres + Banco 30°", difficulty: "Iniciante", image: "🦋",
+    cues: ["Leve flexão de cotovelo fixa", "Abertura até linha do ombro"],
+    mistakes: ["Cotovelos retos demais", "Amplitude excessiva"],
+  }),
+  ex({
+    id: "crucifixo-incl",
+    name: "Crucifixo Inclinado",
+    group: "Peito",
+    pattern: "isolation-chest",
+    type: "isolador",
+    equipment: "Halteres + Banco 30°",
+    difficulty: "Iniciante",
+    image: "🦋",
     description: "Isolador focado no peitoral superior.",
-    cues: ["Banco a 30°","Cotovelos levemente flexionados"], mistakes: ["Soltar peso no fim da amplitude"] }),
-  ex({ id: "peck-deck", name: "Peck Deck", group: "Peito", pattern: "isolation-chest", type: "isolador", equipment: "Máquina Peck Deck", difficulty: "Iniciante", image: "🦋",
+    cues: ["Banco a 30°", "Cotovelos levemente flexionados"],
+    mistakes: ["Soltar peso no fim da amplitude"],
+  }),
+  ex({
+    id: "peck-deck",
+    name: "Peck Deck",
+    group: "Peito",
+    pattern: "isolation-chest",
+    type: "isolador",
+    equipment: "Máquina Peck Deck",
+    difficulty: "Iniciante",
+    image: "🦋",
     description: "Adução horizontal guiada, ótimo para iniciantes.",
-    cues: ["Costas no encosto","Pico de contração ao centro"], mistakes: ["Amplitude excessiva no início"] }),
-  ex({ id: "crossover-alto", name: "Crossover Alto", group: "Peito", pattern: "isolation-chest", type: "isolador", equipment: "Polia Dupla Alta", difficulty: "Iniciante", image: "✝️",
+    cues: ["Costas no encosto", "Pico de contração ao centro"],
+    mistakes: ["Amplitude excessiva no início"],
+  }),
+  ex({
+    id: "crossover-alto",
+    name: "Crossover Alto",
+    group: "Peito",
+    pattern: "isolation-chest",
+    type: "isolador",
+    equipment: "Polia Dupla Alta",
+    difficulty: "Iniciante",
+    image: "✝️",
     description: "Foco em peitoral inferior.",
-    cues: ["Inclinação leve de tronco","Cruzar mãos abaixo do umbigo"], mistakes: ["Usar braços ao invés do peito"] }),
-  ex({ id: "crossover-medio", name: "Crossover Médio", group: "Peito", pattern: "isolation-chest", type: "isolador", equipment: "Polia Dupla", difficulty: "Iniciante", image: "✝️",
+    cues: ["Inclinação leve de tronco", "Cruzar mãos abaixo do umbigo"],
+    mistakes: ["Usar braços ao invés do peito"],
+  }),
+  ex({
+    id: "crossover-medio",
+    name: "Crossover Médio",
+    group: "Peito",
+    pattern: "isolation-chest",
+    type: "isolador",
+    equipment: "Polia Dupla",
+    difficulty: "Iniciante",
+    image: "✝️",
     description: "Adução horizontal com tensão constante.",
-    cues: ["Tronco neutro","Mãos na altura do peito"], mistakes: ["Ombros encolhidos"] }),
-  ex({ id: "crossover-baixo", name: "Crossover Baixo", group: "Peito", pattern: "isolation-chest", type: "isolador", equipment: "Polia Dupla Baixa", difficulty: "Iniciante", image: "✝️",
+    cues: ["Tronco neutro", "Mãos na altura do peito"],
+    mistakes: ["Ombros encolhidos"],
+  }),
+  ex({
+    id: "crossover-baixo",
+    name: "Crossover Baixo",
+    group: "Peito",
+    pattern: "isolation-chest",
+    type: "isolador",
+    equipment: "Polia Dupla Baixa",
+    difficulty: "Iniciante",
+    image: "✝️",
     description: "Foco em peitoral superior, similar ao supino inclinado.",
-    cues: ["Mãos sobem na diagonal","Pico de contração à frente do rosto"], mistakes: ["Curvar a coluna"] }),
-  ex({ id: "flexao", name: "Flexão Tradicional", group: "Peito", secondary: ["Tríceps","Ombros","Abdômen"], pattern: "push-horizontal", type: "composto", equipment: "Peso Corporal", difficulty: "Iniciante", image: "🤸",
+    cues: ["Mãos sobem na diagonal", "Pico de contração à frente do rosto"],
+    mistakes: ["Curvar a coluna"],
+  }),
+  ex({
+    id: "flexao",
+    name: "Flexão Tradicional",
+    group: "Peito",
+    secondary: ["Tríceps", "Ombros", "Abdômen"],
+    pattern: "push-horizontal",
+    type: "composto",
+    equipment: "Peso Corporal",
+    difficulty: "Iniciante",
+    image: "🤸",
     description: "Empurrar horizontal sem equipamento.",
-    cues: ["Corpo alinhado","Cotovelos a 45°"], mistakes: ["Quadril caído","Amplitude curta"] }),
-  ex({ id: "flexao-inclinada", name: "Flexão Inclinada", group: "Peito", secondary: ["Tríceps"], pattern: "push-horizontal", type: "composto", equipment: "Peso Corporal + Banco", difficulty: "Iniciante", image: "🤸",
+    cues: ["Corpo alinhado", "Cotovelos a 45°"],
+    mistakes: ["Quadril caído", "Amplitude curta"],
+  }),
+  ex({
+    id: "flexao-inclinada",
+    name: "Flexão Inclinada",
+    group: "Peito",
+    secondary: ["Tríceps"],
+    pattern: "push-horizontal",
+    type: "composto",
+    equipment: "Peso Corporal + Banco",
+    difficulty: "Iniciante",
+    image: "🤸",
     description: "Variação mais leve para iniciantes.",
-    cues: ["Mãos no banco","Linha reta cabeça-quadril"], mistakes: ["Cotovelos abertos"] }),
+    cues: ["Mãos no banco", "Linha reta cabeça-quadril"],
+    mistakes: ["Cotovelos abertos"],
+  }),
 
   // ============ COSTAS (18) ============
-  ex({ id: "puxada-frontal", name: "Puxada Frontal Aberta", group: "Costas", secondary: ["Bíceps"], pattern: "pull-vertical", type: "composto", equipment: "Polia Alta", difficulty: "Iniciante", image: "🧗",
+  ex({
+    id: "puxada-frontal",
+    name: "Puxada Frontal Aberta",
+    group: "Costas",
+    secondary: ["Bíceps"],
+    pattern: "pull-vertical",
+    type: "composto",
+    equipment: "Polia Alta",
+    difficulty: "Iniciante",
+    image: "🧗",
     description: "Trabalho de latíssimo com pegada pronada aberta.",
-    cues: ["Peito alto","Cotovelos descem para os lados","Barra na clavícula"], mistakes: ["Balançar tronco"] }),
-  ex({ id: "puxada-fechada", name: "Puxada Frontal Fechada", group: "Costas", secondary: ["Bíceps"], pattern: "pull-vertical", type: "composto", equipment: "Polia Alta", difficulty: "Iniciante", image: "🧗",
+    cues: ["Peito alto", "Cotovelos descem para os lados", "Barra na clavícula"],
+    mistakes: ["Balançar tronco"],
+  }),
+  ex({
+    id: "puxada-fechada",
+    name: "Puxada Frontal Fechada",
+    group: "Costas",
+    secondary: ["Bíceps"],
+    pattern: "pull-vertical",
+    type: "composto",
+    equipment: "Polia Alta",
+    difficulty: "Iniciante",
+    image: "🧗",
     description: "Pegada fechada pronada, foco em dorsal médio.",
-    cues: ["Pegada na largura dos ombros"], mistakes: ["Inclinar muito o tronco"] }),
-  ex({ id: "puxada-supinada", name: "Puxada Supinada", group: "Costas", secondary: ["Bíceps"], pattern: "pull-vertical", type: "composto", equipment: "Polia Alta", difficulty: "Iniciante", image: "🧗",
+    cues: ["Pegada na largura dos ombros"],
+    mistakes: ["Inclinar muito o tronco"],
+  }),
+  ex({
+    id: "puxada-supinada",
+    name: "Puxada Supinada",
+    group: "Costas",
+    secondary: ["Bíceps"],
+    pattern: "pull-vertical",
+    type: "composto",
+    equipment: "Polia Alta",
+    difficulty: "Iniciante",
+    image: "🧗",
     description: "Pegada supinada recruta mais bíceps e dorsal inferior.",
-    cues: ["Cotovelos colados ao corpo"], mistakes: ["Usar impulso"] }),
-  ex({ id: "puxada-neutra", name: "Puxada Neutra", group: "Costas", secondary: ["Bíceps"], pattern: "pull-vertical", type: "composto", equipment: "Polia Alta + Triângulo", difficulty: "Iniciante", image: "🧗",
+    cues: ["Cotovelos colados ao corpo"],
+    mistakes: ["Usar impulso"],
+  }),
+  ex({
+    id: "puxada-neutra",
+    name: "Puxada Neutra",
+    group: "Costas",
+    secondary: ["Bíceps"],
+    pattern: "pull-vertical",
+    type: "composto",
+    equipment: "Polia Alta + Triângulo",
+    difficulty: "Iniciante",
+    image: "🧗",
     description: "Pegada neutra, confortável para ombro e cotovelo.",
-    cues: ["Trazer cabo até o peito"], mistakes: ["Curvar lombar"] }),
-  ex({ id: "barra-fixa-pronada", name: "Barra Fixa Pronada", group: "Costas", secondary: ["Bíceps"], pattern: "pull-vertical", type: "composto", equipment: "Barra Fixa", difficulty: "Avançado", image: "🆙",
+    cues: ["Trazer cabo até o peito"],
+    mistakes: ["Curvar lombar"],
+  }),
+  ex({
+    id: "barra-fixa-pronada",
+    name: "Barra Fixa Pronada",
+    group: "Costas",
+    secondary: ["Bíceps"],
+    pattern: "pull-vertical",
+    type: "composto",
+    equipment: "Barra Fixa",
+    difficulty: "Avançado",
+    image: "🆙",
     description: "Puxada vertical com peso corporal, pegada pronada.",
-    cues: ["Escápulas ativas","Subir até o queixo passar"], mistakes: ["Balançar"] }),
-  ex({ id: "barra-fixa-supinada", name: "Barra Fixa Supinada", group: "Costas", secondary: ["Bíceps"], pattern: "pull-vertical", type: "composto", equipment: "Barra Fixa", difficulty: "Avançado", image: "🆙",
+    cues: ["Escápulas ativas", "Subir até o queixo passar"],
+    mistakes: ["Balançar"],
+  }),
+  ex({
+    id: "barra-fixa-supinada",
+    name: "Barra Fixa Supinada",
+    group: "Costas",
+    secondary: ["Bíceps"],
+    pattern: "pull-vertical",
+    type: "composto",
+    equipment: "Barra Fixa",
+    difficulty: "Avançado",
+    image: "🆙",
     description: "Pegada supinada, maior ativação de bíceps.",
-    cues: ["Cotovelos para baixo"], mistakes: ["Amplitude parcial"] }),
-  ex({ id: "barra-fixa-neutra", name: "Barra Fixa Neutra", group: "Costas", secondary: ["Bíceps"], pattern: "pull-vertical", type: "composto", equipment: "Barra Fixa", difficulty: "Intermediário", image: "🆙",
+    cues: ["Cotovelos para baixo"],
+    mistakes: ["Amplitude parcial"],
+  }),
+  ex({
+    id: "barra-fixa-neutra",
+    name: "Barra Fixa Neutra",
+    group: "Costas",
+    secondary: ["Bíceps"],
+    pattern: "pull-vertical",
+    type: "composto",
+    equipment: "Barra Fixa",
+    difficulty: "Intermediário",
+    image: "🆙",
     description: "Pegada neutra confortável para articulações.",
-    cues: ["Subida controlada"], mistakes: ["Balanço"] }),
-  ex({ id: "remada-baixa", name: "Remada Baixa", group: "Costas", secondary: ["Bíceps"], pattern: "pull-horizontal", type: "composto", equipment: "Polia Baixa + Triângulo", difficulty: "Iniciante", image: "🪝",
+    cues: ["Subida controlada"],
+    mistakes: ["Balanço"],
+  }),
+  ex({
+    id: "remada-baixa",
+    name: "Remada Baixa",
+    group: "Costas",
+    secondary: ["Bíceps"],
+    pattern: "pull-horizontal",
+    type: "composto",
+    equipment: "Polia Baixa + Triângulo",
+    difficulty: "Iniciante",
+    image: "🪝",
     description: "Trabalha dorsal médio e romboides.",
-    cues: ["Tronco ereto","Puxar até o umbigo"], mistakes: ["Curvar a lombar"] }),
-  ex({ id: "remada-unilateral", name: "Remada Unilateral Halter", group: "Costas", secondary: ["Bíceps"], pattern: "pull-horizontal", type: "composto", equipment: "Halter + Banco", difficulty: "Intermediário", image: "🪓",
+    cues: ["Tronco ereto", "Puxar até o umbigo"],
+    mistakes: ["Curvar a lombar"],
+  }),
+  ex({
+    id: "remada-unilateral",
+    name: "Remada Unilateral Halter",
+    group: "Costas",
+    secondary: ["Bíceps"],
+    pattern: "pull-horizontal",
+    type: "composto",
+    equipment: "Halter + Banco",
+    difficulty: "Intermediário",
+    image: "🪓",
     description: "Foco unilateral em dorsal e romboides.",
-    cues: ["Apoio firme no banco","Cotovelo rente ao corpo"], mistakes: ["Rotacionar tronco"] }),
-  ex({ id: "remada-curvada", name: "Remada Curvada", group: "Costas", secondary: ["Bíceps","Posterior"], pattern: "pull-horizontal", type: "composto", equipment: "Barra", difficulty: "Avançado", image: "🚣",
+    cues: ["Apoio firme no banco", "Cotovelo rente ao corpo"],
+    mistakes: ["Rotacionar tronco"],
+  }),
+  ex({
+    id: "remada-curvada",
+    name: "Remada Curvada",
+    group: "Costas",
+    secondary: ["Bíceps", "Posterior"],
+    pattern: "pull-horizontal",
+    type: "composto",
+    equipment: "Barra",
+    difficulty: "Avançado",
+    image: "🚣",
     description: "Composto pesado para dorsal, romboides e trapézio médio.",
-    cues: ["Tronco a 45°","Puxar até abdômen"], mistakes: ["Lombar arredondada"],
-    safety: ["Mantenha core firme","Evite se tem dor lombar"] }),
-  ex({ id: "remada-cavalinho", name: "Remada Cavalinho", group: "Costas", secondary: ["Bíceps"], pattern: "pull-horizontal", type: "composto", equipment: "Barra T", difficulty: "Intermediário", image: "🐴",
+    cues: ["Tronco a 45°", "Puxar até abdômen"],
+    mistakes: ["Lombar arredondada"],
+    safety: ["Mantenha core firme", "Evite se tem dor lombar"],
+  }),
+  ex({
+    id: "remada-cavalinho",
+    name: "Remada Cavalinho",
+    group: "Costas",
+    secondary: ["Bíceps"],
+    pattern: "pull-horizontal",
+    type: "composto",
+    equipment: "Barra T",
+    difficulty: "Intermediário",
+    image: "🐴",
     description: "Remada com apoio peitoral ou barra T.",
-    cues: ["Cotovelos rentes ao corpo"], mistakes: ["Subir explosivo"] }),
-  ex({ id: "t-bar-row", name: "T-Bar Row", group: "Costas", secondary: ["Bíceps"], pattern: "pull-horizontal", type: "composto", equipment: "Barra T", difficulty: "Intermediário", image: "🅣",
+    cues: ["Cotovelos rentes ao corpo"],
+    mistakes: ["Subir explosivo"],
+  }),
+  ex({
+    id: "t-bar-row",
+    name: "T-Bar Row",
+    group: "Costas",
+    secondary: ["Bíceps"],
+    pattern: "pull-horizontal",
+    type: "composto",
+    equipment: "Barra T",
+    difficulty: "Intermediário",
+    image: "🅣",
     description: "Remada com barra T, foco em dorsal médio.",
-    cues: ["Quadril para trás","Tronco a 30-45°"], mistakes: ["Curvar coluna"] }),
-  ex({ id: "remada-articulada", name: "Remada Articulada", group: "Costas", secondary: ["Bíceps"], pattern: "pull-horizontal", type: "composto", equipment: "Máquina", difficulty: "Iniciante", image: "🔧",
+    cues: ["Quadril para trás", "Tronco a 30-45°"],
+    mistakes: ["Curvar coluna"],
+  }),
+  ex({
+    id: "remada-articulada",
+    name: "Remada Articulada",
+    group: "Costas",
+    secondary: ["Bíceps"],
+    pattern: "pull-horizontal",
+    type: "composto",
+    equipment: "Máquina",
+    difficulty: "Iniciante",
+    image: "🔧",
     description: "Remada guiada por máquina, segura.",
-    cues: ["Peito apoiado","Pico de contração"], mistakes: ["Soltar o peso"] }),
-  ex({ id: "pulldown-estendido", name: "Pulldown Braços Estendidos", group: "Costas", pattern: "isolation-back", type: "isolador", equipment: "Polia Alta + Barra", difficulty: "Iniciante", image: "📐",
+    cues: ["Peito apoiado", "Pico de contração"],
+    mistakes: ["Soltar o peso"],
+  }),
+  ex({
+    id: "pulldown-estendido",
+    name: "Pulldown Braços Estendidos",
+    group: "Costas",
+    pattern: "isolation-back",
+    type: "isolador",
+    equipment: "Polia Alta + Barra",
+    difficulty: "Iniciante",
+    image: "📐",
     description: "Isolador para latíssimo do dorso.",
-    cues: ["Braços estendidos","Empurrar barra até as coxas"], mistakes: ["Flexionar cotovelos"] }),
-  ex({ id: "pull-over", name: "Pull-over", group: "Costas", secondary: ["Peito"], pattern: "isolation-back", type: "isolador", equipment: "Halter + Banco", difficulty: "Intermediário", image: "🛌",
+    cues: ["Braços estendidos", "Empurrar barra até as coxas"],
+    mistakes: ["Flexionar cotovelos"],
+  }),
+  ex({
+    id: "pull-over",
+    name: "Pull-over",
+    group: "Costas",
+    secondary: ["Peito"],
+    pattern: "isolation-back",
+    type: "isolador",
+    equipment: "Halter + Banco",
+    difficulty: "Intermediário",
+    image: "🛌",
     description: "Trabalha latíssimo e serrátil.",
-    cues: ["Cotovelos semi-flexionados","Amplitude completa"], mistakes: ["Quadril levantar"] }),
-  ex({ id: "remada-sentado-cabo", name: "Remada Sentado Cabo", group: "Costas", secondary: ["Bíceps"], pattern: "pull-horizontal", type: "composto", equipment: "Polia Baixa", difficulty: "Iniciante", image: "🪑",
+    cues: ["Cotovelos semi-flexionados", "Amplitude completa"],
+    mistakes: ["Quadril levantar"],
+  }),
+  ex({
+    id: "remada-sentado-cabo",
+    name: "Remada Sentado Cabo",
+    group: "Costas",
+    secondary: ["Bíceps"],
+    pattern: "pull-horizontal",
+    type: "composto",
+    equipment: "Polia Baixa",
+    difficulty: "Iniciante",
+    image: "🪑",
     description: "Remada com cabo guiado, foco em dorsal médio.",
-    cues: ["Tronco quase vertical"], mistakes: ["Balançar para trás"] }),
-  ex({ id: "remada-smith", name: "Remada Smith", group: "Costas", secondary: ["Bíceps"], pattern: "pull-horizontal", type: "composto", equipment: "Smith", difficulty: "Intermediário", image: "🚂",
+    cues: ["Tronco quase vertical"],
+    mistakes: ["Balançar para trás"],
+  }),
+  ex({
+    id: "remada-smith",
+    name: "Remada Smith",
+    group: "Costas",
+    secondary: ["Bíceps"],
+    pattern: "pull-horizontal",
+    type: "composto",
+    equipment: "Smith",
+    difficulty: "Intermediário",
+    image: "🚂",
     description: "Remada guiada pela barra Smith.",
-    cues: ["Joelhos semi-flexionados","Cotovelos rentes"], mistakes: ["Curvar lombar"] }),
-  ex({ id: "remada-invertida", name: "Remada Invertida", group: "Costas", secondary: ["Bíceps","Abdômen"], pattern: "pull-horizontal", type: "composto", equipment: "Barra Fixa Baixa", difficulty: "Iniciante", image: "⬆️",
+    cues: ["Joelhos semi-flexionados", "Cotovelos rentes"],
+    mistakes: ["Curvar lombar"],
+  }),
+  ex({
+    id: "remada-invertida",
+    name: "Remada Invertida",
+    group: "Costas",
+    secondary: ["Bíceps", "Abdômen"],
+    pattern: "pull-horizontal",
+    type: "composto",
+    equipment: "Barra Fixa Baixa",
+    difficulty: "Iniciante",
+    image: "⬆️",
     description: "Puxar peso corporal abaixo de uma barra.",
-    cues: ["Corpo reto","Puxar peito até a barra"], mistakes: ["Quadril caído"] }),
+    cues: ["Corpo reto", "Puxar peito até a barra"],
+    mistakes: ["Quadril caído"],
+  }),
 
   // ============ OMBROS (13) ============
-  ex({ id: "desenvolvimento-barra", name: "Desenvolvimento Barra", group: "Ombros", secondary: ["Tríceps"], pattern: "push-vertical", type: "composto", equipment: "Barra", difficulty: "Intermediário", image: "🏔️",
+  ex({
+    id: "desenvolvimento-barra",
+    name: "Desenvolvimento Barra",
+    group: "Ombros",
+    secondary: ["Tríceps"],
+    pattern: "push-vertical",
+    type: "composto",
+    equipment: "Barra",
+    difficulty: "Intermediário",
+    image: "🏔️",
     description: "Empurrar vertical pesado.",
-    cues: ["Core firme","Barra passa pelo rosto"], mistakes: ["Hiperextensão lombar"] }),
-  ex({ id: "desenvolvimento-halteres", name: "Desenvolvimento Halteres", group: "Ombros", secondary: ["Tríceps"], pattern: "push-vertical", type: "composto", equipment: "Halteres", difficulty: "Iniciante", image: "🏔️",
+    cues: ["Core firme", "Barra passa pelo rosto"],
+    mistakes: ["Hiperextensão lombar"],
+  }),
+  ex({
+    id: "desenvolvimento-halteres",
+    name: "Desenvolvimento Halteres",
+    group: "Ombros",
+    secondary: ["Tríceps"],
+    pattern: "push-vertical",
+    type: "composto",
+    equipment: "Halteres",
+    difficulty: "Iniciante",
+    image: "🏔️",
     description: "Empurrar vertical com amplitude maior.",
-    cues: ["Cotovelos a 45°","Empurrar acima da cabeça"], mistakes: ["Trancar cotovelos bruscamente"] }),
-  ex({ id: "desenvolvimento-maquina", name: "Desenvolvimento Máquina", group: "Ombros", secondary: ["Tríceps"], pattern: "push-vertical", type: "composto", equipment: "Máquina", difficulty: "Iniciante", image: "🔩",
+    cues: ["Cotovelos a 45°", "Empurrar acima da cabeça"],
+    mistakes: ["Trancar cotovelos bruscamente"],
+  }),
+  ex({
+    id: "desenvolvimento-maquina",
+    name: "Desenvolvimento Máquina",
+    group: "Ombros",
+    secondary: ["Tríceps"],
+    pattern: "push-vertical",
+    type: "composto",
+    equipment: "Máquina",
+    difficulty: "Iniciante",
+    image: "🔩",
     description: "Padrão guiado para ombro.",
-    cues: ["Costas apoiadas"], mistakes: ["Encolher os ombros"] }),
-  ex({ id: "desenvolvimento-smith", name: "Desenvolvimento Smith", group: "Ombros", secondary: ["Tríceps"], pattern: "push-vertical", type: "composto", equipment: "Smith", difficulty: "Iniciante", image: "🚂",
+    cues: ["Costas apoiadas"],
+    mistakes: ["Encolher os ombros"],
+  }),
+  ex({
+    id: "desenvolvimento-smith",
+    name: "Desenvolvimento Smith",
+    group: "Ombros",
+    secondary: ["Tríceps"],
+    pattern: "push-vertical",
+    type: "composto",
+    equipment: "Smith",
+    difficulty: "Iniciante",
+    image: "🚂",
     description: "Empurrar vertical guiado.",
-    cues: ["Barra na linha do queixo"], mistakes: ["Lombar arqueada"] }),
-  ex({ id: "arnold-press", name: "Arnold Press", group: "Ombros", secondary: ["Tríceps"], pattern: "push-vertical", type: "composto", equipment: "Halteres", difficulty: "Intermediário", image: "🌀",
+    cues: ["Barra na linha do queixo"],
+    mistakes: ["Lombar arqueada"],
+  }),
+  ex({
+    id: "arnold-press",
+    name: "Arnold Press",
+    group: "Ombros",
+    secondary: ["Tríceps"],
+    pattern: "push-vertical",
+    type: "composto",
+    equipment: "Halteres",
+    difficulty: "Intermediário",
+    image: "🌀",
     description: "Desenvolvimento com rotação, recruta todas as cabeças.",
-    cues: ["Inicia supinado, termina pronado"], mistakes: ["Movimento rápido demais"] }),
-  ex({ id: "desenvolvimento-militar", name: "Desenvolvimento Militar", group: "Ombros", secondary: ["Tríceps"], pattern: "push-vertical", type: "composto", equipment: "Barra", difficulty: "Avançado", image: "🎖️",
+    cues: ["Inicia supinado, termina pronado"],
+    mistakes: ["Movimento rápido demais"],
+  }),
+  ex({
+    id: "desenvolvimento-militar",
+    name: "Desenvolvimento Militar",
+    group: "Ombros",
+    secondary: ["Tríceps"],
+    pattern: "push-vertical",
+    type: "composto",
+    equipment: "Barra",
+    difficulty: "Avançado",
+    image: "🎖️",
     description: "Empurrar vertical em pé, foco em deltoide anterior.",
-    cues: ["Glúteo contraído","Barra passa pelo rosto"], mistakes: ["Hiperlordose lombar"] }),
-  ex({ id: "elevacao-lateral", name: "Elevação Lateral", group: "Ombros", pattern: "isolation-shoulder", type: "isolador", equipment: "Halteres", difficulty: "Iniciante", image: "🪂",
+    cues: ["Glúteo contraído", "Barra passa pelo rosto"],
+    mistakes: ["Hiperlordose lombar"],
+  }),
+  ex({
+    id: "elevacao-lateral",
+    name: "Elevação Lateral",
+    group: "Ombros",
+    pattern: "isolation-shoulder",
+    type: "isolador",
+    equipment: "Halteres",
+    difficulty: "Iniciante",
+    image: "🪂",
     description: "Isolador para deltoide medial.",
-    cues: ["Leve flexão de cotovelo","Elevar até linha do ombro"], mistakes: ["Usar trapézio","Pesos altos demais"] }),
-  ex({ id: "elevacao-lateral-uni", name: "Elevação Lateral Unilateral", group: "Ombros", pattern: "isolation-shoulder", type: "isolador", equipment: "Halter ou Polia", difficulty: "Iniciante", image: "🪂",
+    cues: ["Leve flexão de cotovelo", "Elevar até linha do ombro"],
+    mistakes: ["Usar trapézio", "Pesos altos demais"],
+  }),
+  ex({
+    id: "elevacao-lateral-uni",
+    name: "Elevação Lateral Unilateral",
+    group: "Ombros",
+    pattern: "isolation-shoulder",
+    type: "isolador",
+    equipment: "Halter ou Polia",
+    difficulty: "Iniciante",
+    image: "🪂",
     description: "Unilateral com mais foco e controle.",
-    cues: ["Apoio com a mão livre"], mistakes: ["Movimento balístico"] }),
-  ex({ id: "elevacao-frontal", name: "Elevação Frontal", group: "Ombros", pattern: "isolation-shoulder", type: "isolador", equipment: "Halteres", difficulty: "Iniciante", image: "👆",
+    cues: ["Apoio com a mão livre"],
+    mistakes: ["Movimento balístico"],
+  }),
+  ex({
+    id: "elevacao-frontal",
+    name: "Elevação Frontal",
+    group: "Ombros",
+    pattern: "isolation-shoulder",
+    type: "isolador",
+    equipment: "Halteres",
+    difficulty: "Iniciante",
+    image: "👆",
     description: "Isolador para deltoide anterior.",
-    cues: ["Subir até linha do ombro"], mistakes: ["Usar impulso de quadril"] }),
-  ex({ id: "crucifixo-inverso", name: "Crucifixo Inverso", group: "Ombros", pattern: "isolation-shoulder", type: "isolador", equipment: "Halteres", difficulty: "Iniciante", image: "🔄",
+    cues: ["Subir até linha do ombro"],
+    mistakes: ["Usar impulso de quadril"],
+  }),
+  ex({
+    id: "crucifixo-inverso",
+    name: "Crucifixo Inverso",
+    group: "Ombros",
+    pattern: "isolation-shoulder",
+    type: "isolador",
+    equipment: "Halteres",
+    difficulty: "Iniciante",
+    image: "🔄",
     description: "Isolador para deltoide posterior.",
-    cues: ["Tronco inclinado à frente"], mistakes: ["Usar trapézio"] }),
-  ex({ id: "face-pull", name: "Face Pull", group: "Ombros", secondary: ["Costas"], pattern: "isolation-shoulder", type: "isolador", equipment: "Polia Alta + Corda", difficulty: "Iniciante", image: "🪢",
+    cues: ["Tronco inclinado à frente"],
+    mistakes: ["Usar trapézio"],
+  }),
+  ex({
+    id: "face-pull",
+    name: "Face Pull",
+    group: "Ombros",
+    secondary: ["Costas"],
+    pattern: "isolation-shoulder",
+    type: "isolador",
+    equipment: "Polia Alta + Corda",
+    difficulty: "Iniciante",
+    image: "🪢",
     description: "Trabalha deltoide posterior e rotadores externos.",
-    cues: ["Puxar corda até o rosto","Rotacionar punhos para fora"], mistakes: ["Cotovelos baixos"] }),
-  ex({ id: "remada-alta", name: "Remada Alta", group: "Ombros", secondary: ["Bíceps"], pattern: "push-vertical", type: "composto", equipment: "Barra ou Polia", difficulty: "Intermediário", image: "⬆️",
+    cues: ["Puxar corda até o rosto", "Rotacionar punhos para fora"],
+    mistakes: ["Cotovelos baixos"],
+  }),
+  ex({
+    id: "remada-alta",
+    name: "Remada Alta",
+    group: "Ombros",
+    secondary: ["Bíceps"],
+    pattern: "push-vertical",
+    type: "composto",
+    equipment: "Barra ou Polia",
+    difficulty: "Intermediário",
+    image: "⬆️",
     description: "Recruta deltoide medial e trapézio.",
-    cues: ["Cotovelos acima do punho"], mistakes: ["Pegada muito fechada"] }),
-  ex({ id: "deltoide-post-maquina", name: "Máquina Deltóide Posterior", group: "Ombros", pattern: "isolation-shoulder", type: "isolador", equipment: "Máquina Peck Deck Inversa", difficulty: "Iniciante", image: "🔄",
+    cues: ["Cotovelos acima do punho"],
+    mistakes: ["Pegada muito fechada"],
+  }),
+  ex({
+    id: "deltoide-post-maquina",
+    name: "Máquina Deltóide Posterior",
+    group: "Ombros",
+    pattern: "isolation-shoulder",
+    type: "isolador",
+    equipment: "Máquina Peck Deck Inversa",
+    difficulty: "Iniciante",
+    image: "🔄",
     description: "Isolador guiado para deltoide posterior.",
-    cues: ["Peito apoiado","Apertar escápulas"], mistakes: ["Encolher ombros"] }),
+    cues: ["Peito apoiado", "Apertar escápulas"],
+    mistakes: ["Encolher ombros"],
+  }),
 
   // ============ BÍCEPS (12) ============
-  ex({ id: "rosca-direta", name: "Rosca Direta", group: "Bíceps", pattern: "isolation-biceps", type: "isolador", equipment: "Barra Reta", difficulty: "Iniciante", image: "💪",
+  ex({
+    id: "rosca-direta",
+    name: "Rosca Direta",
+    group: "Bíceps",
+    pattern: "isolation-biceps",
+    type: "isolador",
+    equipment: "Barra Reta",
+    difficulty: "Iniciante",
+    image: "💪",
     description: "Trabalho principal de bíceps braquial.",
-    cues: ["Cotovelos colados ao tronco"], mistakes: ["Balançar quadril"] }),
-  ex({ id: "rosca-barra-w", name: "Rosca Barra W", group: "Bíceps", pattern: "isolation-biceps", type: "isolador", equipment: "Barra W", difficulty: "Iniciante", image: "🅦",
+    cues: ["Cotovelos colados ao tronco"],
+    mistakes: ["Balançar quadril"],
+  }),
+  ex({
+    id: "rosca-barra-w",
+    name: "Rosca Barra W",
+    group: "Bíceps",
+    pattern: "isolation-biceps",
+    type: "isolador",
+    equipment: "Barra W",
+    difficulty: "Iniciante",
+    image: "🅦",
     description: "Pegada mais confortável para punhos.",
-    cues: ["Cotovelos fixos"], mistakes: ["Subida com impulso"] }),
-  ex({ id: "rosca-alternada", name: "Rosca Alternada", group: "Bíceps", pattern: "isolation-biceps", type: "isolador", equipment: "Halteres", difficulty: "Iniciante", image: "🔁",
+    cues: ["Cotovelos fixos"],
+    mistakes: ["Subida com impulso"],
+  }),
+  ex({
+    id: "rosca-alternada",
+    name: "Rosca Alternada",
+    group: "Bíceps",
+    pattern: "isolation-biceps",
+    type: "isolador",
+    equipment: "Halteres",
+    difficulty: "Iniciante",
+    image: "🔁",
     description: "Bíceps unilateral com supinação.",
-    cues: ["Supinar punho na subida"], mistakes: ["Balançar tronco"] }),
-  ex({ id: "rosca-martelo", name: "Rosca Martelo", group: "Bíceps", secondary: ["Antebraço"], pattern: "isolation-biceps", type: "isolador", equipment: "Halteres", difficulty: "Iniciante", image: "🔨",
+    cues: ["Supinar punho na subida"],
+    mistakes: ["Balançar tronco"],
+  }),
+  ex({
+    id: "rosca-martelo",
+    name: "Rosca Martelo",
+    group: "Bíceps",
+    secondary: ["Antebraço"],
+    pattern: "isolation-biceps",
+    type: "isolador",
+    equipment: "Halteres",
+    difficulty: "Iniciante",
+    image: "🔨",
     description: "Trabalha braquial e braquiorradial.",
-    cues: ["Pegada neutra"], mistakes: ["Rotacionar punho"] }),
-  ex({ id: "rosca-concentrada", name: "Rosca Concentrada", group: "Bíceps", pattern: "isolation-biceps", type: "isolador", equipment: "Halter + Banco", difficulty: "Iniciante", image: "🎯",
+    cues: ["Pegada neutra"],
+    mistakes: ["Rotacionar punho"],
+  }),
+  ex({
+    id: "rosca-concentrada",
+    name: "Rosca Concentrada",
+    group: "Bíceps",
+    pattern: "isolation-biceps",
+    type: "isolador",
+    equipment: "Halter + Banco",
+    difficulty: "Iniciante",
+    image: "🎯",
     description: "Isolador com apoio do cotovelo na coxa.",
-    cues: ["Pico de contração no topo"], mistakes: ["Soltar peso na descida"] }),
-  ex({ id: "rosca-scott", name: "Rosca Scott", group: "Bíceps", pattern: "isolation-biceps", type: "isolador", equipment: "Banco Scott + Barra W", difficulty: "Intermediário", image: "🪑",
+    cues: ["Pico de contração no topo"],
+    mistakes: ["Soltar peso na descida"],
+  }),
+  ex({
+    id: "rosca-scott",
+    name: "Rosca Scott",
+    group: "Bíceps",
+    pattern: "isolation-biceps",
+    type: "isolador",
+    equipment: "Banco Scott + Barra W",
+    difficulty: "Intermediário",
+    image: "🪑",
     description: "Isolador de bíceps com apoio anterior.",
-    cues: ["Cotovelos apoiados"], mistakes: ["Estender e relaxar"] }),
-  ex({ id: "rosca-scott-maquina", name: "Rosca Scott Máquina", group: "Bíceps", pattern: "isolation-biceps", type: "isolador", equipment: "Máquina Scott", difficulty: "Iniciante", image: "🪑",
+    cues: ["Cotovelos apoiados"],
+    mistakes: ["Estender e relaxar"],
+  }),
+  ex({
+    id: "rosca-scott-maquina",
+    name: "Rosca Scott Máquina",
+    group: "Bíceps",
+    pattern: "isolation-biceps",
+    type: "isolador",
+    equipment: "Máquina Scott",
+    difficulty: "Iniciante",
+    image: "🪑",
     description: "Versão guiada da Scott.",
-    cues: ["Movimento controlado"], mistakes: ["Carga excessiva"] }),
-  ex({ id: "rosca-inclinada", name: "Rosca Inclinada", group: "Bíceps", pattern: "isolation-biceps", type: "isolador", equipment: "Halteres + Banco 60°", difficulty: "Intermediário", image: "📐",
+    cues: ["Movimento controlado"],
+    mistakes: ["Carga excessiva"],
+  }),
+  ex({
+    id: "rosca-inclinada",
+    name: "Rosca Inclinada",
+    group: "Bíceps",
+    pattern: "isolation-biceps",
+    type: "isolador",
+    equipment: "Halteres + Banco 60°",
+    difficulty: "Intermediário",
+    image: "📐",
     description: "Alongamento aumentado da cabeça longa.",
-    cues: ["Cotovelos para trás"], mistakes: ["Subir o ombro"] }),
-  ex({ id: "rosca-cabo", name: "Rosca Cabo", group: "Bíceps", pattern: "isolation-biceps", type: "isolador", equipment: "Polia Baixa", difficulty: "Iniciante", image: "🔌",
+    cues: ["Cotovelos para trás"],
+    mistakes: ["Subir o ombro"],
+  }),
+  ex({
+    id: "rosca-cabo",
+    name: "Rosca Cabo",
+    group: "Bíceps",
+    pattern: "isolation-biceps",
+    type: "isolador",
+    equipment: "Polia Baixa",
+    difficulty: "Iniciante",
+    image: "🔌",
     description: "Tensão constante na musculatura.",
-    cues: ["Cotovelos fixos"], mistakes: ["Curvar tronco"] }),
-  ex({ id: "rosca-uni-polia", name: "Rosca Unilateral Polia", group: "Bíceps", pattern: "isolation-biceps", type: "isolador", equipment: "Polia Baixa", difficulty: "Iniciante", image: "🔌",
+    cues: ["Cotovelos fixos"],
+    mistakes: ["Curvar tronco"],
+  }),
+  ex({
+    id: "rosca-uni-polia",
+    name: "Rosca Unilateral Polia",
+    group: "Bíceps",
+    pattern: "isolation-biceps",
+    type: "isolador",
+    equipment: "Polia Baixa",
+    difficulty: "Iniciante",
+    image: "🔌",
     description: "Unilateral para maior foco.",
-    cues: ["Postura estável"], mistakes: ["Movimento de ombro"] }),
-  ex({ id: "rosca-martelo-corda", name: "Rosca Martelo Corda", group: "Bíceps", secondary: ["Antebraço"], pattern: "isolation-biceps", type: "isolador", equipment: "Polia Baixa + Corda", difficulty: "Iniciante", image: "🪢",
+    cues: ["Postura estável"],
+    mistakes: ["Movimento de ombro"],
+  }),
+  ex({
+    id: "rosca-martelo-corda",
+    name: "Rosca Martelo Corda",
+    group: "Bíceps",
+    secondary: ["Antebraço"],
+    pattern: "isolation-biceps",
+    type: "isolador",
+    equipment: "Polia Baixa + Corda",
+    difficulty: "Iniciante",
+    image: "🪢",
     description: "Trabalha braquial e antebraço.",
-    cues: ["Pegada neutra"], mistakes: ["Subir explosivo"] }),
-  ex({ id: "rosca-inversa", name: "Rosca Inversa", group: "Bíceps", secondary: ["Antebraço"], pattern: "isolation-biceps", type: "isolador", equipment: "Barra Reta", difficulty: "Iniciante", image: "🔃",
+    cues: ["Pegada neutra"],
+    mistakes: ["Subir explosivo"],
+  }),
+  ex({
+    id: "rosca-inversa",
+    name: "Rosca Inversa",
+    group: "Bíceps",
+    secondary: ["Antebraço"],
+    pattern: "isolation-biceps",
+    type: "isolador",
+    equipment: "Barra Reta",
+    difficulty: "Iniciante",
+    image: "🔃",
     description: "Pegada pronada, foco em braquiorradial.",
-    cues: ["Punhos firmes"], mistakes: ["Flexionar punho"] }),
+    cues: ["Punhos firmes"],
+    mistakes: ["Flexionar punho"],
+  }),
 
   // ============ TRÍCEPS (10) ============
-  ex({ id: "triceps-pulley", name: "Tríceps Pulley (Barra)", group: "Tríceps", pattern: "isolation-triceps", type: "isolador", equipment: "Polia Alta + Barra", difficulty: "Iniciante", image: "🎯",
+  ex({
+    id: "triceps-pulley",
+    name: "Tríceps Pulley (Barra)",
+    group: "Tríceps",
+    pattern: "isolation-triceps",
+    type: "isolador",
+    equipment: "Polia Alta + Barra",
+    difficulty: "Iniciante",
+    image: "🎯",
     description: "Extensão na polia, foco na cabeça lateral.",
-    cues: ["Cotovelos colados"], mistakes: ["Inclinar tronco"] }),
-  ex({ id: "triceps-corda", name: "Tríceps Corda", group: "Tríceps", pattern: "isolation-triceps", type: "isolador", equipment: "Polia Alta + Corda", difficulty: "Iniciante", image: "🪢",
+    cues: ["Cotovelos colados"],
+    mistakes: ["Inclinar tronco"],
+  }),
+  ex({
+    id: "triceps-corda",
+    name: "Tríceps Corda",
+    group: "Tríceps",
+    pattern: "isolation-triceps",
+    type: "isolador",
+    equipment: "Polia Alta + Corda",
+    difficulty: "Iniciante",
+    image: "🪢",
     description: "Isolador com abertura ao final.",
-    cues: ["Abrir corda na extensão"], mistakes: ["Cotovelos se abrindo"] }),
-  ex({ id: "triceps-barra-reta", name: "Tríceps Barra Reta", group: "Tríceps", pattern: "isolation-triceps", type: "isolador", equipment: "Polia Alta + Barra Reta", difficulty: "Iniciante", image: "📏",
+    cues: ["Abrir corda na extensão"],
+    mistakes: ["Cotovelos se abrindo"],
+  }),
+  ex({
+    id: "triceps-barra-reta",
+    name: "Tríceps Barra Reta",
+    group: "Tríceps",
+    pattern: "isolation-triceps",
+    type: "isolador",
+    equipment: "Polia Alta + Barra Reta",
+    difficulty: "Iniciante",
+    image: "📏",
     description: "Extensão na polia com barra reta.",
-    cues: ["Punho neutro"], mistakes: ["Soltar cotovelo"] }),
-  ex({ id: "triceps-frances", name: "Tríceps Francês", group: "Tríceps", pattern: "isolation-triceps", type: "isolador", equipment: "Halter / Barra W", difficulty: "Intermediário", image: "🇫🇷",
+    cues: ["Punho neutro"],
+    mistakes: ["Soltar cotovelo"],
+  }),
+  ex({
+    id: "triceps-frances",
+    name: "Tríceps Francês",
+    group: "Tríceps",
+    pattern: "isolation-triceps",
+    type: "isolador",
+    equipment: "Halter / Barra W",
+    difficulty: "Intermediário",
+    image: "🇫🇷",
     description: "Extensão acima da cabeça, foco na cabeça longa.",
-    cues: ["Cotovelos apontam para cima"], mistakes: ["Abrir cotovelos"] }),
-  ex({ id: "triceps-testa", name: "Tríceps Testa", group: "Tríceps", pattern: "isolation-triceps", type: "isolador", equipment: "Barra W + Banco", difficulty: "Intermediário", image: "🧠",
+    cues: ["Cotovelos apontam para cima"],
+    mistakes: ["Abrir cotovelos"],
+  }),
+  ex({
+    id: "triceps-testa",
+    name: "Tríceps Testa",
+    group: "Tríceps",
+    pattern: "isolation-triceps",
+    type: "isolador",
+    equipment: "Barra W + Banco",
+    difficulty: "Intermediário",
+    image: "🧠",
     description: "Skull crusher, foco em cabeça longa.",
-    cues: ["Cotovelos fixos","Descida controlada"], mistakes: ["Cotovelos abrindo"] }),
-  ex({ id: "triceps-banco", name: "Tríceps no Banco", group: "Tríceps", secondary: ["Peito"], pattern: "isolation-triceps", type: "composto", equipment: "Banco", difficulty: "Iniciante", image: "🪜",
+    cues: ["Cotovelos fixos", "Descida controlada"],
+    mistakes: ["Cotovelos abrindo"],
+  }),
+  ex({
+    id: "triceps-banco",
+    name: "Tríceps no Banco",
+    group: "Tríceps",
+    secondary: ["Peito"],
+    pattern: "isolation-triceps",
+    type: "composto",
+    equipment: "Banco",
+    difficulty: "Iniciante",
+    image: "🪜",
     description: "Mergulho assistido em banco.",
-    cues: ["Cotovelos para trás"], mistakes: ["Ombros encolhidos"] }),
-  ex({ id: "triceps-unilateral", name: "Tríceps Unilateral", group: "Tríceps", pattern: "isolation-triceps", type: "isolador", equipment: "Polia Alta", difficulty: "Iniciante", image: "1️⃣",
+    cues: ["Cotovelos para trás"],
+    mistakes: ["Ombros encolhidos"],
+  }),
+  ex({
+    id: "triceps-unilateral",
+    name: "Tríceps Unilateral",
+    group: "Tríceps",
+    pattern: "isolation-triceps",
+    type: "isolador",
+    equipment: "Polia Alta",
+    difficulty: "Iniciante",
+    image: "1️⃣",
     description: "Unilateral para foco maior.",
-    cues: ["Postura estável"], mistakes: ["Curvar tronco"] }),
-  ex({ id: "triceps-maquina", name: "Tríceps Máquina", group: "Tríceps", pattern: "isolation-triceps", type: "isolador", equipment: "Máquina", difficulty: "Iniciante", image: "🔩",
+    cues: ["Postura estável"],
+    mistakes: ["Curvar tronco"],
+  }),
+  ex({
+    id: "triceps-maquina",
+    name: "Tríceps Máquina",
+    group: "Tríceps",
+    pattern: "isolation-triceps",
+    type: "isolador",
+    equipment: "Máquina",
+    difficulty: "Iniciante",
+    image: "🔩",
     description: "Padrão guiado.",
-    cues: ["Costas apoiadas"], mistakes: ["Carga excessiva"] }),
-  ex({ id: "mergulho-paralelas", name: "Mergulho nas Paralelas", group: "Tríceps", secondary: ["Peito","Ombros"], pattern: "push-horizontal", type: "composto", equipment: "Paralelas", difficulty: "Avançado", image: "🤸",
+    cues: ["Costas apoiadas"],
+    mistakes: ["Carga excessiva"],
+  }),
+  ex({
+    id: "mergulho-paralelas",
+    name: "Mergulho nas Paralelas",
+    group: "Tríceps",
+    secondary: ["Peito", "Ombros"],
+    pattern: "push-horizontal",
+    type: "composto",
+    equipment: "Paralelas",
+    difficulty: "Avançado",
+    image: "🤸",
     description: "Composto para tríceps com peso corporal.",
-    cues: ["Tronco vertical para foco em tríceps"], mistakes: ["Descer demais"] }),
-  ex({ id: "coice-triceps", name: "Coice de Tríceps", group: "Tríceps", pattern: "isolation-triceps", type: "isolador", equipment: "Halter", difficulty: "Iniciante", image: "🦵",
+    cues: ["Tronco vertical para foco em tríceps"],
+    mistakes: ["Descer demais"],
+  }),
+  ex({
+    id: "coice-triceps",
+    name: "Coice de Tríceps",
+    group: "Tríceps",
+    pattern: "isolation-triceps",
+    type: "isolador",
+    equipment: "Halter",
+    difficulty: "Iniciante",
+    image: "🦵",
     description: "Extensão unilateral com tronco inclinado.",
-    cues: ["Braço paralelo ao chão"], mistakes: ["Mover o braço"] }),
+    cues: ["Braço paralelo ao chão"],
+    mistakes: ["Mover o braço"],
+  }),
 
   // ============ QUADRÍCEPS (15) ============
-  ex({ id: "agachamento-livre", name: "Agachamento Livre", group: "Quadríceps", secondary: ["Glúteos","Posterior"], pattern: "squat", type: "composto", equipment: "Barra + Rack", difficulty: "Avançado", image: "🏋️‍♂️",
+  ex({
+    id: "agachamento-livre",
+    name: "Agachamento Livre",
+    group: "Quadríceps",
+    secondary: ["Glúteos", "Posterior"],
+    pattern: "squat",
+    type: "composto",
+    equipment: "Barra + Rack",
+    difficulty: "Avançado",
+    image: "🏋️‍♂️",
     description: "Rei dos exercícios de membros inferiores.",
-    cues: ["Pés na linha do ombro","Joelhos seguem os pés","Profundidade até paralela"],
-    mistakes: ["Joelhos colapsando","Calcanhar saindo do chão"],
-    safety: ["Use sempre a gaiola","Aqueça quadris e tornozelos"] }),
-  ex({ id: "agachamento-smith", name: "Agachamento Smith", group: "Quadríceps", secondary: ["Glúteos"], pattern: "squat", type: "composto", equipment: "Smith", difficulty: "Intermediário", image: "🚂",
+    cues: ["Pés na linha do ombro", "Joelhos seguem os pés", "Profundidade até paralela"],
+    mistakes: ["Joelhos colapsando", "Calcanhar saindo do chão"],
+    safety: ["Use sempre a gaiola", "Aqueça quadris e tornozelos"],
+  }),
+  ex({
+    id: "agachamento-smith",
+    name: "Agachamento Smith",
+    group: "Quadríceps",
+    secondary: ["Glúteos"],
+    pattern: "squat",
+    type: "composto",
+    equipment: "Smith",
+    difficulty: "Intermediário",
+    image: "🚂",
     description: "Agachamento guiado pela barra Smith.",
-    cues: ["Pés ligeiramente à frente"], mistakes: ["Joelhos para dentro"] }),
-  ex({ id: "agachamento-frontal", name: "Agachamento Frontal", group: "Quadríceps", secondary: ["Abdômen"], pattern: "squat", type: "composto", equipment: "Barra + Rack", difficulty: "Avançado", image: "⏪",
+    cues: ["Pés ligeiramente à frente"],
+    mistakes: ["Joelhos para dentro"],
+  }),
+  ex({
+    id: "agachamento-frontal",
+    name: "Agachamento Frontal",
+    group: "Quadríceps",
+    secondary: ["Abdômen"],
+    pattern: "squat",
+    type: "composto",
+    equipment: "Barra + Rack",
+    difficulty: "Avançado",
+    image: "⏪",
     description: "Barra à frente, maior demanda em quadríceps e core.",
-    cues: ["Cotovelos altos"], mistakes: ["Tronco caindo à frente"] }),
-  ex({ id: "leg-press-45", name: "Leg Press 45°", group: "Quadríceps", secondary: ["Glúteos"], pattern: "squat", type: "composto", equipment: "Máquina Leg Press", difficulty: "Iniciante", image: "🦵",
+    cues: ["Cotovelos altos"],
+    mistakes: ["Tronco caindo à frente"],
+  }),
+  ex({
+    id: "leg-press-45",
+    name: "Leg Press 45°",
+    group: "Quadríceps",
+    secondary: ["Glúteos"],
+    pattern: "squat",
+    type: "composto",
+    equipment: "Máquina Leg Press",
+    difficulty: "Iniciante",
+    image: "🦵",
     description: "Empurrar com membros inferiores em ângulo.",
-    cues: ["Lombar apoiada"], mistakes: ["Lombar saindo do encosto"] }),
-  ex({ id: "leg-press-horizontal", name: "Leg Press Horizontal", group: "Quadríceps", secondary: ["Glúteos"], pattern: "squat", type: "composto", equipment: "Máquina", difficulty: "Iniciante", image: "🦵",
+    cues: ["Lombar apoiada"],
+    mistakes: ["Lombar saindo do encosto"],
+  }),
+  ex({
+    id: "leg-press-horizontal",
+    name: "Leg Press Horizontal",
+    group: "Quadríceps",
+    secondary: ["Glúteos"],
+    pattern: "squat",
+    type: "composto",
+    equipment: "Máquina",
+    difficulty: "Iniciante",
+    image: "🦵",
     description: "Alternativa horizontal segura.",
-    cues: ["Pés na largura do quadril"], mistakes: ["Joelhos colapsando"] }),
-  ex({ id: "hack-machine", name: "Hack Machine", group: "Quadríceps", secondary: ["Glúteos"], pattern: "squat", type: "composto", equipment: "Máquina Hack", difficulty: "Intermediário", image: "⛰️",
+    cues: ["Pés na largura do quadril"],
+    mistakes: ["Joelhos colapsando"],
+  }),
+  ex({
+    id: "hack-machine",
+    name: "Hack Machine",
+    group: "Quadríceps",
+    secondary: ["Glúteos"],
+    pattern: "squat",
+    type: "composto",
+    equipment: "Máquina Hack",
+    difficulty: "Intermediário",
+    image: "⛰️",
     description: "Agachamento guiado.",
-    cues: ["Pés alinhados","Descer até 90°"], mistakes: ["Amplitude curta"] }),
-  ex({ id: "cadeira-extensora", name: "Cadeira Extensora", group: "Quadríceps", pattern: "isolation-quad", type: "isolador", equipment: "Máquina", difficulty: "Iniciante", image: "🪑",
+    cues: ["Pés alinhados", "Descer até 90°"],
+    mistakes: ["Amplitude curta"],
+  }),
+  ex({
+    id: "cadeira-extensora",
+    name: "Cadeira Extensora",
+    group: "Quadríceps",
+    pattern: "isolation-quad",
+    type: "isolador",
+    equipment: "Máquina",
+    difficulty: "Iniciante",
+    image: "🪑",
     description: "Isolador para quadríceps.",
-    cues: ["Extensão completa"], mistakes: ["Movimento muito rápido"] }),
-  ex({ id: "afundo", name: "Afundo", group: "Quadríceps", secondary: ["Glúteos"], pattern: "lunge", type: "composto", equipment: "Halteres", difficulty: "Intermediário", image: "🚶",
+    cues: ["Extensão completa"],
+    mistakes: ["Movimento muito rápido"],
+  }),
+  ex({
+    id: "afundo",
+    name: "Afundo",
+    group: "Quadríceps",
+    secondary: ["Glúteos"],
+    pattern: "lunge",
+    type: "composto",
+    equipment: "Halteres",
+    difficulty: "Intermediário",
+    image: "🚶",
     description: "Unilateral para quadríceps e glúteo.",
-    cues: ["Tronco ereto"], mistakes: ["Joelho à frente do pé"] }),
-  ex({ id: "passada", name: "Passada", group: "Quadríceps", secondary: ["Glúteos"], pattern: "lunge", type: "composto", equipment: "Halteres", difficulty: "Intermediário", image: "🚶",
+    cues: ["Tronco ereto"],
+    mistakes: ["Joelho à frente do pé"],
+  }),
+  ex({
+    id: "passada",
+    name: "Passada",
+    group: "Quadríceps",
+    secondary: ["Glúteos"],
+    pattern: "lunge",
+    type: "composto",
+    equipment: "Halteres",
+    difficulty: "Intermediário",
+    image: "🚶",
     description: "Passada caminhando.",
-    cues: ["Passos longos"], mistakes: ["Passo curto"] }),
-  ex({ id: "bulgarian", name: "Bulgarian Split Squat", group: "Quadríceps", secondary: ["Glúteos"], pattern: "lunge", type: "composto", equipment: "Halteres + Banco", difficulty: "Avançado", image: "🦵",
+    cues: ["Passos longos"],
+    mistakes: ["Passo curto"],
+  }),
+  ex({
+    id: "bulgarian",
+    name: "Bulgarian Split Squat",
+    group: "Quadríceps",
+    secondary: ["Glúteos"],
+    pattern: "lunge",
+    type: "composto",
+    equipment: "Halteres + Banco",
+    difficulty: "Avançado",
+    image: "🦵",
     description: "Agachamento búlgaro unilateral.",
-    cues: ["Pé traseiro apoiado","Joelho da frente alinhado"], mistakes: ["Tronco caindo"] }),
-  ex({ id: "sissy-squat", name: "Sissy Squat", group: "Quadríceps", pattern: "isolation-quad", type: "isolador", equipment: "Peso Corporal", difficulty: "Avançado", image: "🧘",
+    cues: ["Pé traseiro apoiado", "Joelho da frente alinhado"],
+    mistakes: ["Tronco caindo"],
+  }),
+  ex({
+    id: "sissy-squat",
+    name: "Sissy Squat",
+    group: "Quadríceps",
+    pattern: "isolation-quad",
+    type: "isolador",
+    equipment: "Peso Corporal",
+    difficulty: "Avançado",
+    image: "🧘",
     description: "Isolador intenso para quadríceps.",
-    cues: ["Calcanhares no ar"], mistakes: ["Curvar tronco à frente"] }),
-  ex({ id: "step-up", name: "Step Up", group: "Quadríceps", secondary: ["Glúteos"], pattern: "lunge", type: "composto", equipment: "Banco + Halteres", difficulty: "Iniciante", image: "🪜",
+    cues: ["Calcanhares no ar"],
+    mistakes: ["Curvar tronco à frente"],
+  }),
+  ex({
+    id: "step-up",
+    name: "Step Up",
+    group: "Quadríceps",
+    secondary: ["Glúteos"],
+    pattern: "lunge",
+    type: "composto",
+    equipment: "Banco + Halteres",
+    difficulty: "Iniciante",
+    image: "🪜",
     description: "Subida em banco unilateral.",
-    cues: ["Apoio total do pé"], mistakes: ["Empurrar com pé de trás"] }),
-  ex({ id: "agachamento-sumo", name: "Agachamento Sumô", group: "Quadríceps", secondary: ["Glúteos","Posterior"], pattern: "squat", type: "composto", equipment: "Halter / Barra", difficulty: "Intermediário", image: "🤼",
+    cues: ["Apoio total do pé"],
+    mistakes: ["Empurrar com pé de trás"],
+  }),
+  ex({
+    id: "agachamento-sumo",
+    name: "Agachamento Sumô",
+    group: "Quadríceps",
+    secondary: ["Glúteos", "Posterior"],
+    pattern: "squat",
+    type: "composto",
+    equipment: "Halter / Barra",
+    difficulty: "Intermediário",
+    image: "🤼",
     description: "Base larga, foco em adutores e glúteos.",
-    cues: ["Pés bem abertos","Pontas dos pés para fora"], mistakes: ["Joelhos para dentro"] }),
-  ex({ id: "agachamento-goblet", name: "Agachamento Goblet", group: "Quadríceps", secondary: ["Glúteos","Abdômen"], pattern: "squat", type: "composto", equipment: "Halter ou Kettlebell", difficulty: "Iniciante", image: "🏆",
+    cues: ["Pés bem abertos", "Pontas dos pés para fora"],
+    mistakes: ["Joelhos para dentro"],
+  }),
+  ex({
+    id: "agachamento-goblet",
+    name: "Agachamento Goblet",
+    group: "Quadríceps",
+    secondary: ["Glúteos", "Abdômen"],
+    pattern: "squat",
+    type: "composto",
+    equipment: "Halter ou Kettlebell",
+    difficulty: "Iniciante",
+    image: "🏆",
     description: "Agachamento com peso à frente.",
-    cues: ["Tronco ereto"], mistakes: ["Cotovelos abertos"] }),
-  ex({ id: "avanco-andando", name: "Avanço Andando", group: "Quadríceps", secondary: ["Glúteos"], pattern: "lunge", type: "composto", equipment: "Halteres", difficulty: "Intermediário", image: "🚶",
+    cues: ["Tronco ereto"],
+    mistakes: ["Cotovelos abertos"],
+  }),
+  ex({
+    id: "avanco-andando",
+    name: "Avanço Andando",
+    group: "Quadríceps",
+    secondary: ["Glúteos"],
+    pattern: "lunge",
+    type: "composto",
+    equipment: "Halteres",
+    difficulty: "Intermediário",
+    image: "🚶",
     description: "Lunges em movimento.",
-    cues: ["Postura estável"], mistakes: ["Joelho colapsa"] }),
+    cues: ["Postura estável"],
+    mistakes: ["Joelho colapsa"],
+  }),
 
   // ============ POSTERIOR (12) ============
-  ex({ id: "stiff-barra", name: "Stiff Barra", group: "Posterior", secondary: ["Glúteos"], pattern: "hinge", type: "composto", equipment: "Barra", difficulty: "Intermediário", image: "🦿",
+  ex({
+    id: "stiff-barra",
+    name: "Stiff Barra",
+    group: "Posterior",
+    secondary: ["Glúteos"],
+    pattern: "hinge",
+    type: "composto",
+    equipment: "Barra",
+    difficulty: "Intermediário",
+    image: "🦿",
     description: "Foco em posteriores de coxa e glúteos.",
-    cues: ["Joelhos semi-flexionados","Quadril para trás"], mistakes: ["Lombar arredondada"] }),
-  ex({ id: "stiff-halteres", name: "Stiff Halteres", group: "Posterior", secondary: ["Glúteos"], pattern: "hinge", type: "composto", equipment: "Halteres", difficulty: "Iniciante", image: "🦿",
+    cues: ["Joelhos semi-flexionados", "Quadril para trás"],
+    mistakes: ["Lombar arredondada"],
+  }),
+  ex({
+    id: "stiff-halteres",
+    name: "Stiff Halteres",
+    group: "Posterior",
+    secondary: ["Glúteos"],
+    pattern: "hinge",
+    type: "composto",
+    equipment: "Halteres",
+    difficulty: "Iniciante",
+    image: "🦿",
     description: "Versão com halteres, mais amigável.",
-    cues: ["Coluna neutra"], mistakes: ["Joelhos flexionando demais"] }),
-  ex({ id: "terra-romeno", name: "Terra Romeno (RDL)", group: "Posterior", secondary: ["Glúteos"], pattern: "hinge", type: "composto", equipment: "Barra ou Halteres", difficulty: "Avançado", image: "🏛️",
+    cues: ["Coluna neutra"],
+    mistakes: ["Joelhos flexionando demais"],
+  }),
+  ex({
+    id: "terra-romeno",
+    name: "Terra Romeno (RDL)",
+    group: "Posterior",
+    secondary: ["Glúteos"],
+    pattern: "hinge",
+    type: "composto",
+    equipment: "Barra ou Halteres",
+    difficulty: "Avançado",
+    image: "🏛️",
     description: "Composto pesado para posterior e glúteos.",
-    cues: ["Barra rente ao corpo"], mistakes: ["Curvar coluna"] }),
-  ex({ id: "mesa-flexora", name: "Mesa Flexora", group: "Posterior", pattern: "isolation-hamstring", type: "isolador", equipment: "Máquina", difficulty: "Iniciante", image: "🛏️",
+    cues: ["Barra rente ao corpo"],
+    mistakes: ["Curvar coluna"],
+  }),
+  ex({
+    id: "mesa-flexora",
+    name: "Mesa Flexora",
+    group: "Posterior",
+    pattern: "isolation-hamstring",
+    type: "isolador",
+    equipment: "Máquina",
+    difficulty: "Iniciante",
+    image: "🛏️",
     description: "Isolador para isquiotibiais deitado.",
-    cues: ["Quadril apoiado"], mistakes: ["Levantar quadril"] }),
-  ex({ id: "flexora-sentada", name: "Flexora Sentada", group: "Posterior", pattern: "isolation-hamstring", type: "isolador", equipment: "Máquina", difficulty: "Iniciante", image: "💺",
+    cues: ["Quadril apoiado"],
+    mistakes: ["Levantar quadril"],
+  }),
+  ex({
+    id: "flexora-sentada",
+    name: "Flexora Sentada",
+    group: "Posterior",
+    pattern: "isolation-hamstring",
+    type: "isolador",
+    equipment: "Máquina",
+    difficulty: "Iniciante",
+    image: "💺",
     description: "Flexão de joelho sentado.",
-    cues: ["Costas apoiadas"], mistakes: ["Usar impulso"] }),
-  ex({ id: "flexora-em-pe", name: "Flexora em Pé", group: "Posterior", pattern: "isolation-hamstring", type: "isolador", equipment: "Máquina", difficulty: "Iniciante", image: "🚶",
+    cues: ["Costas apoiadas"],
+    mistakes: ["Usar impulso"],
+  }),
+  ex({
+    id: "flexora-em-pe",
+    name: "Flexora em Pé",
+    group: "Posterior",
+    pattern: "isolation-hamstring",
+    type: "isolador",
+    equipment: "Máquina",
+    difficulty: "Iniciante",
+    image: "🚶",
     description: "Unilateral em pé.",
-    cues: ["Tronco estável"], mistakes: ["Inclinar tronco"] }),
-  ex({ id: "good-morning", name: "Good Morning", group: "Posterior", secondary: ["Glúteos"], pattern: "hinge", type: "composto", equipment: "Barra", difficulty: "Avançado", image: "🌅",
+    cues: ["Tronco estável"],
+    mistakes: ["Inclinar tronco"],
+  }),
+  ex({
+    id: "good-morning",
+    name: "Good Morning",
+    group: "Posterior",
+    secondary: ["Glúteos"],
+    pattern: "hinge",
+    type: "composto",
+    equipment: "Barra",
+    difficulty: "Avançado",
+    image: "🌅",
     description: "Hinge com barra nas costas.",
-    cues: ["Joelhos semi-flexionados","Coluna neutra"], mistakes: ["Curvar coluna"],
-    safety: ["Comece com cargas leves"] }),
-  ex({ id: "nordic-curl", name: "Nordic Curl", group: "Posterior", pattern: "isolation-hamstring", type: "isolador", equipment: "Peso Corporal + Apoio", difficulty: "Avançado", image: "🧎",
+    cues: ["Joelhos semi-flexionados", "Coluna neutra"],
+    mistakes: ["Curvar coluna"],
+    safety: ["Comece com cargas leves"],
+  }),
+  ex({
+    id: "nordic-curl",
+    name: "Nordic Curl",
+    group: "Posterior",
+    pattern: "isolation-hamstring",
+    type: "isolador",
+    equipment: "Peso Corporal + Apoio",
+    difficulty: "Avançado",
+    image: "🧎",
     description: "Excêntrico extremo para posteriores.",
-    cues: ["Descida controlada"], mistakes: ["Quadril fletindo"] }),
-  ex({ id: "levantamento-terra", name: "Levantamento Terra", group: "Posterior", secondary: ["Costas","Glúteos","Quadríceps"], pattern: "hinge", type: "composto", equipment: "Barra", difficulty: "Avançado", image: "🏗️",
+    cues: ["Descida controlada"],
+    mistakes: ["Quadril fletindo"],
+  }),
+  ex({
+    id: "levantamento-terra",
+    name: "Levantamento Terra",
+    group: "Posterior",
+    secondary: ["Costas", "Glúteos", "Quadríceps"],
+    pattern: "hinge",
+    type: "composto",
+    equipment: "Barra",
+    difficulty: "Avançado",
+    image: "🏗️",
     description: "Composto total de cadeia posterior.",
-    cues: ["Barra rente às canelas","Tronco firme"],
-    mistakes: ["Lombar arredondada","Joelhos travando antes do tronco"],
-    safety: ["Cinto em cargas pesadas","Comece com cargas leves"] }),
-  ex({ id: "terra-sumo", name: "Terra Sumô", group: "Posterior", secondary: ["Glúteos"], pattern: "hinge", type: "composto", equipment: "Barra", difficulty: "Avançado", image: "🤼",
+    cues: ["Barra rente às canelas", "Tronco firme"],
+    mistakes: ["Lombar arredondada", "Joelhos travando antes do tronco"],
+    safety: ["Cinto em cargas pesadas", "Comece com cargas leves"],
+  }),
+  ex({
+    id: "terra-sumo",
+    name: "Terra Sumô",
+    group: "Posterior",
+    secondary: ["Glúteos"],
+    pattern: "hinge",
+    type: "composto",
+    equipment: "Barra",
+    difficulty: "Avançado",
+    image: "🤼",
     description: "Terra com base larga.",
-    cues: ["Pegada por dentro das pernas"], mistakes: ["Pés pouco abertos"] }),
-  ex({ id: "glute-ham-raise", name: "Glute Ham Raise", group: "Posterior", secondary: ["Glúteos"], pattern: "isolation-hamstring", type: "isolador", equipment: "Aparelho GHR", difficulty: "Avançado", image: "🛐",
+    cues: ["Pegada por dentro das pernas"],
+    mistakes: ["Pés pouco abertos"],
+  }),
+  ex({
+    id: "glute-ham-raise",
+    name: "Glute Ham Raise",
+    group: "Posterior",
+    secondary: ["Glúteos"],
+    pattern: "isolation-hamstring",
+    type: "isolador",
+    equipment: "Aparelho GHR",
+    difficulty: "Avançado",
+    image: "🛐",
     description: "Excêntrico de posteriores em aparelho próprio.",
-    cues: ["Pés fixos"], mistakes: ["Quadril fletindo"] }),
-  ex({ id: "flexora-uni", name: "Flexora Unilateral", group: "Posterior", pattern: "isolation-hamstring", type: "isolador", equipment: "Máquina", difficulty: "Iniciante", image: "1️⃣",
+    cues: ["Pés fixos"],
+    mistakes: ["Quadril fletindo"],
+  }),
+  ex({
+    id: "flexora-uni",
+    name: "Flexora Unilateral",
+    group: "Posterior",
+    pattern: "isolation-hamstring",
+    type: "isolador",
+    equipment: "Máquina",
+    difficulty: "Iniciante",
+    image: "1️⃣",
     description: "Foco unilateral nos posteriores.",
-    cues: ["Movimento controlado"], mistakes: ["Carga excessiva"] }),
+    cues: ["Movimento controlado"],
+    mistakes: ["Carga excessiva"],
+  }),
 
   // ============ GLÚTEOS (10) ============
-  ex({ id: "hip-thrust", name: "Elevação Pélvica (Hip Thrust)", group: "Glúteos", secondary: ["Posterior"], pattern: "hinge", type: "composto", equipment: "Barra + Banco", difficulty: "Intermediário", image: "🍑",
+  ex({
+    id: "hip-thrust",
+    name: "Elevação Pélvica (Hip Thrust)",
+    group: "Glúteos",
+    secondary: ["Posterior"],
+    pattern: "hinge",
+    type: "composto",
+    equipment: "Barra + Banco",
+    difficulty: "Intermediário",
+    image: "🍑",
     description: "Hip thrust para glúteo máximo.",
-    cues: ["Queixo retraído","Extensão total"], mistakes: ["Hiperextensão lombar"] }),
-  ex({ id: "hip-thrust-maquina", name: "Hip Thrust Máquina", group: "Glúteos", pattern: "hinge", type: "composto", equipment: "Máquina", difficulty: "Iniciante", image: "🍑",
+    cues: ["Queixo retraído", "Extensão total"],
+    mistakes: ["Hiperextensão lombar"],
+  }),
+  ex({
+    id: "hip-thrust-maquina",
+    name: "Hip Thrust Máquina",
+    group: "Glúteos",
+    pattern: "hinge",
+    type: "composto",
+    equipment: "Máquina",
+    difficulty: "Iniciante",
+    image: "🍑",
     description: "Versão guiada.",
-    cues: ["Pés bem apoiados"], mistakes: ["Pés muito longe"] }),
-  ex({ id: "gluteo-maquina", name: "Glúteo Máquina", group: "Glúteos", pattern: "isolation-glute", type: "isolador", equipment: "Máquina", difficulty: "Iniciante", image: "🦶",
+    cues: ["Pés bem apoiados"],
+    mistakes: ["Pés muito longe"],
+  }),
+  ex({
+    id: "gluteo-maquina",
+    name: "Glúteo Máquina",
+    group: "Glúteos",
+    pattern: "isolation-glute",
+    type: "isolador",
+    equipment: "Máquina",
+    difficulty: "Iniciante",
+    image: "🦶",
     description: "Extensão de quadril guiada.",
-    cues: ["Tronco apoiado"], mistakes: ["Curvar lombar"] }),
-  ex({ id: "coice-polia", name: "Coice na Polia", group: "Glúteos", pattern: "isolation-glute", type: "isolador", equipment: "Polia Baixa", difficulty: "Iniciante", image: "🦶",
+    cues: ["Tronco apoiado"],
+    mistakes: ["Curvar lombar"],
+  }),
+  ex({
+    id: "coice-polia",
+    name: "Coice na Polia",
+    group: "Glúteos",
+    pattern: "isolation-glute",
+    type: "isolador",
+    equipment: "Polia Baixa",
+    difficulty: "Iniciante",
+    image: "🦶",
     description: "Isolador para glúteo máximo.",
-    cues: ["Tronco estável"], mistakes: ["Curvar lombar"] }),
-  ex({ id: "abducao-maquina", name: "Abdução Máquina", group: "Glúteos", pattern: "isolation-glute", type: "isolador", equipment: "Máquina", difficulty: "Iniciante", image: "↔️",
+    cues: ["Tronco estável"],
+    mistakes: ["Curvar lombar"],
+  }),
+  ex({
+    id: "abducao-maquina",
+    name: "Abdução Máquina",
+    group: "Glúteos",
+    pattern: "isolation-glute",
+    type: "isolador",
+    equipment: "Máquina",
+    difficulty: "Iniciante",
+    image: "↔️",
     description: "Trabalha glúteo médio.",
-    cues: ["Tronco ereto"], mistakes: ["Inclinar tronco"] }),
-  ex({ id: "abducao-polia", name: "Abdução Polia", group: "Glúteos", pattern: "isolation-glute", type: "isolador", equipment: "Polia Baixa", difficulty: "Iniciante", image: "↔️",
+    cues: ["Tronco ereto"],
+    mistakes: ["Inclinar tronco"],
+  }),
+  ex({
+    id: "abducao-polia",
+    name: "Abdução Polia",
+    group: "Glúteos",
+    pattern: "isolation-glute",
+    type: "isolador",
+    equipment: "Polia Baixa",
+    difficulty: "Iniciante",
+    image: "↔️",
     description: "Abdução unilateral com cabo.",
-    cues: ["Apoio com mão livre"], mistakes: ["Tronco inclinado"] }),
-  ex({ id: "ponte-gluteos", name: "Ponte de Glúteos", group: "Glúteos", pattern: "hinge", type: "isolador", equipment: "Peso Corporal", difficulty: "Iniciante", image: "🌉",
+    cues: ["Apoio com mão livre"],
+    mistakes: ["Tronco inclinado"],
+  }),
+  ex({
+    id: "ponte-gluteos",
+    name: "Ponte de Glúteos",
+    group: "Glúteos",
+    pattern: "hinge",
+    type: "isolador",
+    equipment: "Peso Corporal",
+    difficulty: "Iniciante",
+    image: "🌉",
     description: "Versão sem peso, ótimo aquecimento.",
-    cues: ["Contrair glúteo no topo"], mistakes: ["Pés muito longe"] }),
-  ex({ id: "step-up-gluteo", name: "Step Up Glúteo", group: "Glúteos", secondary: ["Quadríceps"], pattern: "lunge", type: "composto", equipment: "Banco Alto + Halteres", difficulty: "Intermediário", image: "🪜",
+    cues: ["Contrair glúteo no topo"],
+    mistakes: ["Pés muito longe"],
+  }),
+  ex({
+    id: "step-up-gluteo",
+    name: "Step Up Glúteo",
+    group: "Glúteos",
+    secondary: ["Quadríceps"],
+    pattern: "lunge",
+    type: "composto",
+    equipment: "Banco Alto + Halteres",
+    difficulty: "Intermediário",
+    image: "🪜",
     description: "Subida em banco alto, foco em glúteo.",
-    cues: ["Inclinar tronco levemente"], mistakes: ["Empurrar com pé de trás"] }),
-  ex({ id: "agachamento-sumo-profundo", name: "Agachamento Sumô Profundo", group: "Glúteos", secondary: ["Quadríceps"], pattern: "squat", type: "composto", equipment: "Halter ou Barra", difficulty: "Intermediário", image: "🤼",
+    cues: ["Inclinar tronco levemente"],
+    mistakes: ["Empurrar com pé de trás"],
+  }),
+  ex({
+    id: "agachamento-sumo-profundo",
+    name: "Agachamento Sumô Profundo",
+    group: "Glúteos",
+    secondary: ["Quadríceps"],
+    pattern: "squat",
+    type: "composto",
+    equipment: "Halter ou Barra",
+    difficulty: "Intermediário",
+    image: "🤼",
     description: "Profundidade maior recruta mais glúteo.",
-    cues: ["Pés bem abertos"], mistakes: ["Joelhos colapsando"] }),
-  ex({ id: "kickback-maquina", name: "Kickback Máquina", group: "Glúteos", pattern: "isolation-glute", type: "isolador", equipment: "Máquina", difficulty: "Iniciante", image: "🦵",
+    cues: ["Pés bem abertos"],
+    mistakes: ["Joelhos colapsando"],
+  }),
+  ex({
+    id: "kickback-maquina",
+    name: "Kickback Máquina",
+    group: "Glúteos",
+    pattern: "isolation-glute",
+    type: "isolador",
+    equipment: "Máquina",
+    difficulty: "Iniciante",
+    image: "🦵",
     description: "Coice de glúteo guiado por máquina.",
-    cues: ["Tronco apoiado"], mistakes: ["Curvar lombar"] }),
+    cues: ["Tronco apoiado"],
+    mistakes: ["Curvar lombar"],
+  }),
 
   // ============ PANTURRILHAS (8) ============
-  ex({ id: "panturrilha-em-pe", name: "Panturrilha em Pé", group: "Panturrilhas", pattern: "isolation-calf", type: "isolador", equipment: "Máquina ou Step", difficulty: "Iniciante", image: "🦶",
+  ex({
+    id: "panturrilha-em-pe",
+    name: "Panturrilha em Pé",
+    group: "Panturrilhas",
+    pattern: "isolation-calf",
+    type: "isolador",
+    equipment: "Máquina ou Step",
+    difficulty: "Iniciante",
+    image: "🦶",
     description: "Foco em gastrocnêmio.",
-    cues: ["Amplitude completa","Pausa no topo"], mistakes: ["Joelhos flexionando"] }),
-  ex({ id: "panturrilha-sentado", name: "Panturrilha Sentado", group: "Panturrilhas", pattern: "isolation-calf", type: "isolador", equipment: "Máquina", difficulty: "Iniciante", image: "🪑",
+    cues: ["Amplitude completa", "Pausa no topo"],
+    mistakes: ["Joelhos flexionando"],
+  }),
+  ex({
+    id: "panturrilha-sentado",
+    name: "Panturrilha Sentado",
+    group: "Panturrilhas",
+    pattern: "isolation-calf",
+    type: "isolador",
+    equipment: "Máquina",
+    difficulty: "Iniciante",
+    image: "🪑",
     description: "Foco em sóleo.",
-    cues: ["Joelhos a 90°"], mistakes: ["Carga em excesso"] }),
-  ex({ id: "panturrilha-leg-press", name: "Panturrilha no Leg Press", group: "Panturrilhas", pattern: "isolation-calf", type: "isolador", equipment: "Leg Press", difficulty: "Iniciante", image: "🦵",
+    cues: ["Joelhos a 90°"],
+    mistakes: ["Carga em excesso"],
+  }),
+  ex({
+    id: "panturrilha-leg-press",
+    name: "Panturrilha no Leg Press",
+    group: "Panturrilhas",
+    pattern: "isolation-calf",
+    type: "isolador",
+    equipment: "Leg Press",
+    difficulty: "Iniciante",
+    image: "🦵",
     description: "Variação no leg press.",
-    cues: ["Antepé na borda"], mistakes: ["Joelhos travados"] }),
-  ex({ id: "panturrilha-smith", name: "Panturrilha Smith", group: "Panturrilhas", pattern: "isolation-calf", type: "isolador", equipment: "Smith", difficulty: "Iniciante", image: "🚂",
+    cues: ["Antepé na borda"],
+    mistakes: ["Joelhos travados"],
+  }),
+  ex({
+    id: "panturrilha-smith",
+    name: "Panturrilha Smith",
+    group: "Panturrilhas",
+    pattern: "isolation-calf",
+    type: "isolador",
+    equipment: "Smith",
+    difficulty: "Iniciante",
+    image: "🚂",
     description: "Versão guiada com Smith.",
-    cues: ["Postura estável"], mistakes: ["Sem amplitude"] }),
-  ex({ id: "panturrilha-unilateral", name: "Panturrilha Unilateral", group: "Panturrilhas", pattern: "isolation-calf", type: "isolador", equipment: "Halter + Step", difficulty: "Iniciante", image: "1️⃣",
+    cues: ["Postura estável"],
+    mistakes: ["Sem amplitude"],
+  }),
+  ex({
+    id: "panturrilha-unilateral",
+    name: "Panturrilha Unilateral",
+    group: "Panturrilhas",
+    pattern: "isolation-calf",
+    type: "isolador",
+    equipment: "Halter + Step",
+    difficulty: "Iniciante",
+    image: "1️⃣",
     description: "Foco unilateral.",
-    cues: ["Apoio leve com mão"], mistakes: ["Saltar a contração"] }),
-  ex({ id: "panturrilha-degrau", name: "Panturrilha no Degrau", group: "Panturrilhas", pattern: "isolation-calf", type: "isolador", equipment: "Step", difficulty: "Iniciante", image: "🪜",
+    cues: ["Apoio leve com mão"],
+    mistakes: ["Saltar a contração"],
+  }),
+  ex({
+    id: "panturrilha-degrau",
+    name: "Panturrilha no Degrau",
+    group: "Panturrilhas",
+    pattern: "isolation-calf",
+    type: "isolador",
+    equipment: "Step",
+    difficulty: "Iniciante",
+    image: "🪜",
     description: "Apenas peso corporal.",
-    cues: ["Amplitude máxima"], mistakes: ["Movimento curto"] }),
-  ex({ id: "donkey-calf", name: "Donkey Calf Raise", group: "Panturrilhas", pattern: "isolation-calf", type: "isolador", equipment: "Aparelho ou Peso nas Costas", difficulty: "Intermediário", image: "🐴",
+    cues: ["Amplitude máxima"],
+    mistakes: ["Movimento curto"],
+  }),
+  ex({
+    id: "donkey-calf",
+    name: "Donkey Calf Raise",
+    group: "Panturrilhas",
+    pattern: "isolation-calf",
+    type: "isolador",
+    equipment: "Aparelho ou Peso nas Costas",
+    difficulty: "Intermediário",
+    image: "🐴",
     description: "Variação com tronco inclinado.",
-    cues: ["Quadril em 90°"], mistakes: ["Curvar lombar"] }),
-  ex({ id: "panturrilha-maquina", name: "Panturrilha Máquina", group: "Panturrilhas", pattern: "isolation-calf", type: "isolador", equipment: "Máquina específica", difficulty: "Iniciante", image: "🔩",
+    cues: ["Quadril em 90°"],
+    mistakes: ["Curvar lombar"],
+  }),
+  ex({
+    id: "panturrilha-maquina",
+    name: "Panturrilha Máquina",
+    group: "Panturrilhas",
+    pattern: "isolation-calf",
+    type: "isolador",
+    equipment: "Máquina específica",
+    difficulty: "Iniciante",
+    image: "🔩",
     description: "Padrão guiado.",
-    cues: ["Pausa no topo"], mistakes: ["Saltos com impulso"] }),
+    cues: ["Pausa no topo"],
+    mistakes: ["Saltos com impulso"],
+  }),
 
   // ============ ABDÔMEN (15) ============
-  ex({ id: "prancha", name: "Prancha", group: "Abdômen", pattern: "core", type: "isolador", equipment: "Peso Corporal", difficulty: "Iniciante", image: "📏",
+  ex({
+    id: "prancha",
+    name: "Prancha",
+    group: "Abdômen",
+    pattern: "core",
+    type: "isolador",
+    equipment: "Peso Corporal",
+    difficulty: "Iniciante",
+    image: "📏",
     description: "Estabilização isométrica do core.",
-    cues: ["Quadril alinhado","Glúteo contraído"], mistakes: ["Quadril caído"] }),
-  ex({ id: "prancha-lateral", name: "Prancha Lateral", group: "Abdômen", pattern: "core", type: "isolador", equipment: "Peso Corporal", difficulty: "Iniciante", image: "📐",
+    cues: ["Quadril alinhado", "Glúteo contraído"],
+    mistakes: ["Quadril caído"],
+  }),
+  ex({
+    id: "prancha-lateral",
+    name: "Prancha Lateral",
+    group: "Abdômen",
+    pattern: "core",
+    type: "isolador",
+    equipment: "Peso Corporal",
+    difficulty: "Iniciante",
+    image: "📐",
     description: "Trabalha oblíquos.",
-    cues: ["Cotovelo sob o ombro"], mistakes: ["Quadril caído"] }),
-  ex({ id: "crunch", name: "Crunch", group: "Abdômen", pattern: "core", type: "isolador", equipment: "Peso Corporal", difficulty: "Iniciante", image: "🔥",
+    cues: ["Cotovelo sob o ombro"],
+    mistakes: ["Quadril caído"],
+  }),
+  ex({
+    id: "crunch",
+    name: "Crunch",
+    group: "Abdômen",
+    pattern: "core",
+    type: "isolador",
+    equipment: "Peso Corporal",
+    difficulty: "Iniciante",
+    image: "🔥",
     description: "Flexão de tronco para reto abdominal.",
-    cues: ["Queixo afastado do peito"], mistakes: ["Puxar o pescoço"] }),
-  ex({ id: "crunch-maquina", name: "Crunch Máquina", group: "Abdômen", pattern: "core", type: "isolador", equipment: "Máquina", difficulty: "Iniciante", image: "🔩",
+    cues: ["Queixo afastado do peito"],
+    mistakes: ["Puxar o pescoço"],
+  }),
+  ex({
+    id: "crunch-maquina",
+    name: "Crunch Máquina",
+    group: "Abdômen",
+    pattern: "core",
+    type: "isolador",
+    equipment: "Máquina",
+    difficulty: "Iniciante",
+    image: "🔩",
     description: "Versão guiada com resistência.",
-    cues: ["Movimento controlado"], mistakes: ["Carga excessiva"] }),
-  ex({ id: "infra-banco", name: "Infra no Banco", group: "Abdômen", pattern: "core", type: "isolador", equipment: "Banco", difficulty: "Iniciante", image: "🛏️",
+    cues: ["Movimento controlado"],
+    mistakes: ["Carga excessiva"],
+  }),
+  ex({
+    id: "infra-banco",
+    name: "Infra no Banco",
+    group: "Abdômen",
+    pattern: "core",
+    type: "isolador",
+    equipment: "Banco",
+    difficulty: "Iniciante",
+    image: "🛏️",
     description: "Elevação de pernas com apoio.",
-    cues: ["Lombar colada"], mistakes: ["Quadril descolando"] }),
-  ex({ id: "infra-suspenso", name: "Infra Suspenso", group: "Abdômen", pattern: "core", type: "isolador", equipment: "Barra Fixa", difficulty: "Avançado", image: "🆙",
+    cues: ["Lombar colada"],
+    mistakes: ["Quadril descolando"],
+  }),
+  ex({
+    id: "infra-suspenso",
+    name: "Infra Suspenso",
+    group: "Abdômen",
+    pattern: "core",
+    type: "isolador",
+    equipment: "Barra Fixa",
+    difficulty: "Avançado",
+    image: "🆙",
     description: "Pendurar e elevar pernas.",
-    cues: ["Controle total"], mistakes: ["Balançar"] }),
-  ex({ id: "elevacao-pernas", name: "Elevação de Pernas", group: "Abdômen", pattern: "core", type: "isolador", equipment: "Banco ou Solo", difficulty: "Iniciante", image: "🦵",
+    cues: ["Controle total"],
+    mistakes: ["Balançar"],
+  }),
+  ex({
+    id: "elevacao-pernas",
+    name: "Elevação de Pernas",
+    group: "Abdômen",
+    pattern: "core",
+    type: "isolador",
+    equipment: "Banco ou Solo",
+    difficulty: "Iniciante",
+    image: "🦵",
     description: "Trabalha porção inferior.",
-    cues: ["Lombar pressionada"], mistakes: ["Quadril levantando"] }),
-  ex({ id: "ab-wheel", name: "Ab Wheel", group: "Abdômen", pattern: "core", type: "composto", equipment: "Roda Abdominal", difficulty: "Avançado", image: "🛞",
+    cues: ["Lombar pressionada"],
+    mistakes: ["Quadril levantando"],
+  }),
+  ex({
+    id: "ab-wheel",
+    name: "Ab Wheel",
+    group: "Abdômen",
+    pattern: "core",
+    type: "composto",
+    equipment: "Roda Abdominal",
+    difficulty: "Avançado",
+    image: "🛞",
     description: "Extensão total do core.",
-    cues: ["Glúteo contraído","Coluna neutra"], mistakes: ["Arquear lombar"] }),
-  ex({ id: "russian-twist", name: "Russian Twist", group: "Abdômen", pattern: "core", type: "isolador", equipment: "Halter ou Anilha", difficulty: "Iniciante", image: "🔄",
+    cues: ["Glúteo contraído", "Coluna neutra"],
+    mistakes: ["Arquear lombar"],
+  }),
+  ex({
+    id: "russian-twist",
+    name: "Russian Twist",
+    group: "Abdômen",
+    pattern: "core",
+    type: "isolador",
+    equipment: "Halter ou Anilha",
+    difficulty: "Iniciante",
+    image: "🔄",
     description: "Rotação para oblíquos.",
-    cues: ["Tronco a 45°"], mistakes: ["Movimento só com braços"] }),
-  ex({ id: "mountain-climber", name: "Mountain Climber", group: "Abdômen", secondary: ["Cardio"], pattern: "core", type: "composto", equipment: "Peso Corporal", difficulty: "Iniciante", image: "⛰️",
+    cues: ["Tronco a 45°"],
+    mistakes: ["Movimento só com braços"],
+  }),
+  ex({
+    id: "mountain-climber",
+    name: "Mountain Climber",
+    group: "Abdômen",
+    secondary: ["Cardio"],
+    pattern: "core",
+    type: "composto",
+    equipment: "Peso Corporal",
+    difficulty: "Iniciante",
+    image: "⛰️",
     description: "Cardio + core dinâmico.",
-    cues: ["Quadril estável"], mistakes: ["Quadril subindo"] }),
-  ex({ id: "bicicleta-abdominal", name: "Bicicleta Abdominal", group: "Abdômen", pattern: "core", type: "isolador", equipment: "Peso Corporal", difficulty: "Iniciante", image: "🚴",
+    cues: ["Quadril estável"],
+    mistakes: ["Quadril subindo"],
+  }),
+  ex({
+    id: "bicicleta-abdominal",
+    name: "Bicicleta Abdominal",
+    group: "Abdômen",
+    pattern: "core",
+    type: "isolador",
+    equipment: "Peso Corporal",
+    difficulty: "Iniciante",
+    image: "🚴",
     description: "Rotação alternada para oblíquos.",
-    cues: ["Cotovelo encontra joelho oposto"], mistakes: ["Puxar pescoço"] }),
-  ex({ id: "v-up", name: "V-Up", group: "Abdômen", pattern: "core", type: "composto", equipment: "Peso Corporal", difficulty: "Intermediário", image: "📐",
+    cues: ["Cotovelo encontra joelho oposto"],
+    mistakes: ["Puxar pescoço"],
+  }),
+  ex({
+    id: "v-up",
+    name: "V-Up",
+    group: "Abdômen",
+    pattern: "core",
+    type: "composto",
+    equipment: "Peso Corporal",
+    difficulty: "Intermediário",
+    image: "📐",
     description: "Tronco e pernas se aproximam em V.",
-    cues: ["Movimento simultâneo"], mistakes: ["Usar impulso"] }),
-  ex({ id: "sit-up", name: "Sit-Up", group: "Abdômen", pattern: "core", type: "isolador", equipment: "Peso Corporal", difficulty: "Iniciante", image: "🆙",
+    cues: ["Movimento simultâneo"],
+    mistakes: ["Usar impulso"],
+  }),
+  ex({
+    id: "sit-up",
+    name: "Sit-Up",
+    group: "Abdômen",
+    pattern: "core",
+    type: "isolador",
+    equipment: "Peso Corporal",
+    difficulty: "Iniciante",
+    image: "🆙",
     description: "Flexão de tronco completa.",
-    cues: ["Pés ancorados"], mistakes: ["Puxar pescoço"] }),
-  ex({ id: "woodchopper", name: "Woodchopper", group: "Abdômen", pattern: "core", type: "composto", equipment: "Polia ou Halter", difficulty: "Intermediário", image: "🪓",
+    cues: ["Pés ancorados"],
+    mistakes: ["Puxar pescoço"],
+  }),
+  ex({
+    id: "woodchopper",
+    name: "Woodchopper",
+    group: "Abdômen",
+    pattern: "core",
+    type: "composto",
+    equipment: "Polia ou Halter",
+    difficulty: "Intermediário",
+    image: "🪓",
     description: "Rotação diagonal explosiva.",
-    cues: ["Quadril rotaciona"], mistakes: ["Curvar coluna"] }),
-  ex({ id: "hollow-hold", name: "Hollow Hold", group: "Abdômen", pattern: "core", type: "isolador", equipment: "Peso Corporal", difficulty: "Intermediário", image: "🛟",
+    cues: ["Quadril rotaciona"],
+    mistakes: ["Curvar coluna"],
+  }),
+  ex({
+    id: "hollow-hold",
+    name: "Hollow Hold",
+    group: "Abdômen",
+    pattern: "core",
+    type: "isolador",
+    equipment: "Peso Corporal",
+    difficulty: "Intermediário",
+    image: "🛟",
     description: "Isometria avançada do core.",
-    cues: ["Lombar colada no solo"], mistakes: ["Lombar arqueada"] }),
+    cues: ["Lombar colada no solo"],
+    mistakes: ["Lombar arqueada"],
+  }),
 
   // ============ ANTEBRAÇO (6) ============
-  ex({ id: "rosca-punho", name: "Rosca de Punho", group: "Antebraço", pattern: "isolation-biceps", type: "isolador", equipment: "Barra", difficulty: "Iniciante", image: "✊",
+  ex({
+    id: "rosca-punho",
+    name: "Rosca de Punho",
+    group: "Antebraço",
+    pattern: "isolation-biceps",
+    type: "isolador",
+    equipment: "Barra",
+    difficulty: "Iniciante",
+    image: "✊",
     description: "Trabalha flexores do punho.",
-    cues: ["Antebraço apoiado"], mistakes: ["Amplitude curta"] }),
-  ex({ id: "rosca-punho-inversa", name: "Rosca Punho Inversa", group: "Antebraço", pattern: "isolation-biceps", type: "isolador", equipment: "Barra", difficulty: "Iniciante", image: "✊",
+    cues: ["Antebraço apoiado"],
+    mistakes: ["Amplitude curta"],
+  }),
+  ex({
+    id: "rosca-punho-inversa",
+    name: "Rosca Punho Inversa",
+    group: "Antebraço",
+    pattern: "isolation-biceps",
+    type: "isolador",
+    equipment: "Barra",
+    difficulty: "Iniciante",
+    image: "✊",
     description: "Trabalha extensores do punho.",
-    cues: ["Carga leve"], mistakes: ["Movimento balístico"] }),
-  ex({ id: "farmer-walk", name: "Farmer Walk", group: "Antebraço", secondary: ["Abdômen"], pattern: "carry", type: "composto", equipment: "Halteres Pesados", difficulty: "Intermediário", image: "🚶",
+    cues: ["Carga leve"],
+    mistakes: ["Movimento balístico"],
+  }),
+  ex({
+    id: "farmer-walk",
+    name: "Farmer Walk",
+    group: "Antebraço",
+    secondary: ["Abdômen"],
+    pattern: "carry",
+    type: "composto",
+    equipment: "Halteres Pesados",
+    difficulty: "Intermediário",
+    image: "🚶",
     description: "Caminhada com carga, foco em pegada.",
-    cues: ["Postura ereta"], mistakes: ["Encolher os ombros"] }),
-  ex({ id: "dead-hang", name: "Dead Hang", group: "Antebraço", pattern: "carry", type: "isolador", equipment: "Barra Fixa", difficulty: "Iniciante", image: "🆙",
+    cues: ["Postura ereta"],
+    mistakes: ["Encolher os ombros"],
+  }),
+  ex({
+    id: "dead-hang",
+    name: "Dead Hang",
+    group: "Antebraço",
+    pattern: "carry",
+    type: "isolador",
+    equipment: "Barra Fixa",
+    difficulty: "Iniciante",
+    image: "🆙",
     description: "Pendurar para desenvolver pegada.",
-    cues: ["Ombros ativos"], mistakes: ["Ombros relaxados"] }),
-  ex({ id: "wrist-roller", name: "Wrist Roller", group: "Antebraço", pattern: "isolation-biceps", type: "isolador", equipment: "Wrist Roller", difficulty: "Intermediário", image: "🌀",
+    cues: ["Ombros ativos"],
+    mistakes: ["Ombros relaxados"],
+  }),
+  ex({
+    id: "wrist-roller",
+    name: "Wrist Roller",
+    group: "Antebraço",
+    pattern: "isolation-biceps",
+    type: "isolador",
+    equipment: "Wrist Roller",
+    difficulty: "Intermediário",
+    image: "🌀",
     description: "Enrolar peso com punhos.",
-    cues: ["Braços paralelos ao chão"], mistakes: ["Ombros se movendo"] }),
-  ex({ id: "pegada-pinca", name: "Pegada Pinça", group: "Antebraço", pattern: "isolation-biceps", type: "isolador", equipment: "Anilhas", difficulty: "Intermediário", image: "🦾",
+    cues: ["Braços paralelos ao chão"],
+    mistakes: ["Ombros se movendo"],
+  }),
+  ex({
+    id: "pegada-pinca",
+    name: "Pegada Pinça",
+    group: "Antebraço",
+    pattern: "isolation-biceps",
+    type: "isolador",
+    equipment: "Anilhas",
+    difficulty: "Intermediário",
+    image: "🦾",
     description: "Segurar anilhas pelas bordas.",
-    cues: ["Polegar firme"], mistakes: ["Deixar cair"] }),
+    cues: ["Polegar firme"],
+    mistakes: ["Deixar cair"],
+  }),
 
   // ============ CARDIO (15) ============
-  ex({ id: "cardio-caminhada", name: "Caminhada", group: "Cardio", pattern: "cardio", type: "composto", equipment: "Esteira / Rua", difficulty: "Iniciante", image: "🚶",
+  ex({
+    id: "cardio-caminhada",
+    name: "Caminhada",
+    group: "Cardio",
+    pattern: "cardio",
+    type: "composto",
+    equipment: "Esteira / Rua",
+    difficulty: "Iniciante",
+    image: "🚶",
     description: "Cardio de baixa intensidade.",
-    cues: ["Postura ereta"], mistakes: ["Inclinar muito para frente"] }),
-  ex({ id: "cardio-corrida-leve", name: "Corrida Leve", group: "Cardio", pattern: "cardio", type: "composto", equipment: "Esteira / Rua", difficulty: "Iniciante", image: "🏃",
+    cues: ["Postura ereta"],
+    mistakes: ["Inclinar muito para frente"],
+  }),
+  ex({
+    id: "cardio-corrida-leve",
+    name: "Corrida Leve",
+    group: "Cardio",
+    pattern: "cardio",
+    type: "composto",
+    equipment: "Esteira / Rua",
+    difficulty: "Iniciante",
+    image: "🏃",
     description: "Zona 2, fácil sustentar conversa.",
-    cues: ["Cadência confortável"], mistakes: ["Acelerar demais"] }),
-  ex({ id: "cardio-corrida-moderada", name: "Corrida Moderada", group: "Cardio", pattern: "cardio", type: "composto", equipment: "Esteira / Rua", difficulty: "Intermediário", image: "🏃",
+    cues: ["Cadência confortável"],
+    mistakes: ["Acelerar demais"],
+  }),
+  ex({
+    id: "cardio-corrida-moderada",
+    name: "Corrida Moderada",
+    group: "Cardio",
+    pattern: "cardio",
+    type: "composto",
+    equipment: "Esteira / Rua",
+    difficulty: "Intermediário",
+    image: "🏃",
     description: "Ritmo sustentado, conversa em frases curtas.",
-    cues: ["Respiração controlada"], mistakes: ["Passada longa demais"] }),
-  ex({ id: "cardio-corrida-intensa", name: "Corrida Intensa", group: "Cardio", pattern: "cardio", type: "composto", equipment: "Esteira / Rua", difficulty: "Avançado", image: "🏃‍♀️",
+    cues: ["Respiração controlada"],
+    mistakes: ["Passada longa demais"],
+  }),
+  ex({
+    id: "cardio-corrida-intensa",
+    name: "Corrida Intensa",
+    group: "Cardio",
+    pattern: "cardio",
+    type: "composto",
+    equipment: "Esteira / Rua",
+    difficulty: "Avançado",
+    image: "🏃‍♀️",
     description: "Ritmo de prova.",
-    cues: ["Aquecer bem antes"], mistakes: ["Negligenciar volta à calma"] }),
-  ex({ id: "cardio-bike-erg", name: "Bicicleta Ergométrica", group: "Cardio", pattern: "cardio", type: "composto", equipment: "Bike Ergométrica", difficulty: "Iniciante", image: "🚴",
+    cues: ["Aquecer bem antes"],
+    mistakes: ["Negligenciar volta à calma"],
+  }),
+  ex({
+    id: "cardio-bike-erg",
+    name: "Bicicleta Ergométrica",
+    group: "Cardio",
+    pattern: "cardio",
+    type: "composto",
+    equipment: "Bike Ergométrica",
+    difficulty: "Iniciante",
+    image: "🚴",
     description: "Cardio sem impacto.",
-    cues: ["Selim na altura do quadril"], mistakes: ["Selim baixo"] }),
-  ex({ id: "cardio-spinning", name: "Bicicleta Spinning", group: "Cardio", pattern: "cardio", type: "composto", equipment: "Bike Spinning", difficulty: "Intermediário", image: "🚴‍♀️",
+    cues: ["Selim na altura do quadril"],
+    mistakes: ["Selim baixo"],
+  }),
+  ex({
+    id: "cardio-spinning",
+    name: "Bicicleta Spinning",
+    group: "Cardio",
+    pattern: "cardio",
+    type: "composto",
+    equipment: "Bike Spinning",
+    difficulty: "Intermediário",
+    image: "🚴‍♀️",
     description: "Intervalos de alta intensidade.",
-    cues: ["Núcleo firme"], mistakes: ["Curvar muito o tronco"] }),
-  ex({ id: "cardio-eliptico", name: "Elíptico", group: "Cardio", pattern: "cardio", type: "composto", equipment: "Elíptico", difficulty: "Iniciante", image: "♾️",
+    cues: ["Núcleo firme"],
+    mistakes: ["Curvar muito o tronco"],
+  }),
+  ex({
+    id: "cardio-eliptico",
+    name: "Elíptico",
+    group: "Cardio",
+    pattern: "cardio",
+    type: "composto",
+    equipment: "Elíptico",
+    difficulty: "Iniciante",
+    image: "♾️",
     description: "Cardio sem impacto, corpo todo.",
-    cues: ["Postura ereta"], mistakes: ["Apoiar todo peso nos braços"] }),
-  ex({ id: "cardio-escada", name: "Escada", group: "Cardio", pattern: "cardio", type: "composto", equipment: "Escada Ergométrica", difficulty: "Intermediário", image: "🪜",
+    cues: ["Postura ereta"],
+    mistakes: ["Apoiar todo peso nos braços"],
+  }),
+  ex({
+    id: "cardio-escada",
+    name: "Escada",
+    group: "Cardio",
+    pattern: "cardio",
+    type: "composto",
+    equipment: "Escada Ergométrica",
+    difficulty: "Intermediário",
+    image: "🪜",
     description: "Cardio com forte demanda em pernas.",
-    cues: ["Pé inteiro no degrau"], mistakes: ["Apoiar muito o peso nos corrimãos"] }),
-  ex({ id: "cardio-remo", name: "Remo Ergométrico", group: "Cardio", pattern: "cardio", type: "composto", equipment: "Remo Ergométrico", difficulty: "Intermediário", image: "🚣",
+    cues: ["Pé inteiro no degrau"],
+    mistakes: ["Apoiar muito o peso nos corrimãos"],
+  }),
+  ex({
+    id: "cardio-remo",
+    name: "Remo Ergométrico",
+    group: "Cardio",
+    pattern: "cardio",
+    type: "composto",
+    equipment: "Remo Ergométrico",
+    difficulty: "Intermediário",
+    image: "🚣",
     description: "Cardio de corpo inteiro.",
-    cues: ["Sequência pernas-tronco-braços"], mistakes: ["Puxar só com braços"] }),
-  ex({ id: "cardio-corda", name: "Pular Corda", group: "Cardio", pattern: "cardio", type: "composto", equipment: "Corda", difficulty: "Iniciante", image: "🪢",
+    cues: ["Sequência pernas-tronco-braços"],
+    mistakes: ["Puxar só com braços"],
+  }),
+  ex({
+    id: "cardio-corda",
+    name: "Pular Corda",
+    group: "Cardio",
+    pattern: "cardio",
+    type: "composto",
+    equipment: "Corda",
+    difficulty: "Iniciante",
+    image: "🪢",
     description: "Cardio explosivo e coordenação.",
-    cues: ["Saltos baixos"], mistakes: ["Saltos altos cansam rápido"] }),
-  ex({ id: "cardio-air-bike", name: "Air Bike", group: "Cardio", pattern: "cardio", type: "composto", equipment: "Air Bike", difficulty: "Avançado", image: "🌪️",
+    cues: ["Saltos baixos"],
+    mistakes: ["Saltos altos cansam rápido"],
+  }),
+  ex({
+    id: "cardio-air-bike",
+    name: "Air Bike",
+    group: "Cardio",
+    pattern: "cardio",
+    type: "composto",
+    equipment: "Air Bike",
+    difficulty: "Avançado",
+    image: "🌪️",
     description: "Cardio de corpo inteiro intenso.",
-    cues: ["Empurrar e puxar"], mistakes: ["Esquecer braços"] }),
-  ex({ id: "cardio-hiit-esteira", name: "HIIT Esteira", group: "Cardio", pattern: "cardio", type: "composto", equipment: "Esteira", difficulty: "Avançado", image: "⚡",
+    cues: ["Empurrar e puxar"],
+    mistakes: ["Esquecer braços"],
+  }),
+  ex({
+    id: "cardio-hiit-esteira",
+    name: "HIIT Esteira",
+    group: "Cardio",
+    pattern: "cardio",
+    type: "composto",
+    equipment: "Esteira",
+    difficulty: "Avançado",
+    image: "⚡",
     description: "Tiros curtos e descansos.",
-    cues: ["Aqueça 5min antes"], mistakes: ["Pular aquecimento"] }),
-  ex({ id: "cardio-hiit-bike", name: "HIIT Bicicleta", group: "Cardio", pattern: "cardio", type: "composto", equipment: "Bike", difficulty: "Avançado", image: "⚡",
+    cues: ["Aqueça 5min antes"],
+    mistakes: ["Pular aquecimento"],
+  }),
+  ex({
+    id: "cardio-hiit-bike",
+    name: "HIIT Bicicleta",
+    group: "Cardio",
+    pattern: "cardio",
+    type: "composto",
+    equipment: "Bike",
+    difficulty: "Avançado",
+    image: "⚡",
     description: "Tiros e recuperação na bike.",
-    cues: ["Resistência adequada"], mistakes: ["Selim mal regulado"] }),
-  ex({ id: "cardio-caminhada-inclinada", name: "Caminhada Inclinada", group: "Cardio", pattern: "cardio", type: "composto", equipment: "Esteira", difficulty: "Iniciante", image: "⛰️",
+    cues: ["Resistência adequada"],
+    mistakes: ["Selim mal regulado"],
+  }),
+  ex({
+    id: "cardio-caminhada-inclinada",
+    name: "Caminhada Inclinada",
+    group: "Cardio",
+    pattern: "cardio",
+    type: "composto",
+    equipment: "Esteira",
+    difficulty: "Iniciante",
+    image: "⛰️",
     description: "Inclinação 8-15% para queimar mais.",
-    cues: ["Sem se apoiar nos braços"], mistakes: ["Segurar nas alças"] }),
-  ex({ id: "cardio-sprint", name: "Sprint Intervalado", group: "Cardio", pattern: "cardio", type: "composto", equipment: "Rua / Esteira", difficulty: "Avançado", image: "💨",
+    cues: ["Sem se apoiar nos braços"],
+    mistakes: ["Segurar nas alças"],
+  }),
+  ex({
+    id: "cardio-sprint",
+    name: "Sprint Intervalado",
+    group: "Cardio",
+    pattern: "cardio",
+    type: "composto",
+    equipment: "Rua / Esteira",
+    difficulty: "Avançado",
+    image: "💨",
     description: "Tiros máximos de 15-30s.",
-    cues: ["Aqueça muito bem"], mistakes: ["Pular volta à calma"] }),
+    cues: ["Aqueça muito bem"],
+    mistakes: ["Pular volta à calma"],
+  }),
 ];
 
-export type StrengthSlot = { exerciseId: string; sets: number; reps: string; rest: string };
+export type StrengthSlot = {
+  exerciseId: string;
+  sets: number;
+  reps: string;
+  rest: string;
+  name?: string;
+};
 export type CardioSlot = {
-  type: "Corrida Contínua" | "Corrida Intervalada" | "Corrida Longa" | "Caminhada Inclinada" | "Tempo Run";
+  type:
+    | "Corrida Contínua"
+    | "Corrida Intervalada"
+    | "Corrida Longa"
+    | "Caminhada Inclinada"
+    | "Tempo Run";
   duration: number; // min
   distance?: number; // km
   pace?: string; // min:ss / km
   details: string;
 };
 export type SportSlot = { sport: string; duration: number; details: string };
+export type TrainingBlockSlot = {
+  nome: string;
+  tipo: "Condicionamento" | "Core" | "Mobilidade" | "Recuperacao";
+  modalidade?: string;
+  duracao?: string;
+  prescricao?: string;
+  objetivos?: string[];
+};
+export type TrainingProgram = {
+  musculacao: StrengthSlot[];
+  condicionamento: TrainingBlockSlot[];
+  core: TrainingBlockSlot[];
+  mobilidade: TrainingBlockSlot[];
+  recuperacao: TrainingBlockSlot[];
+};
 
 export type DayPlan = {
   date: string; // YYYY-MM-DD
@@ -537,18 +2156,36 @@ export type DayPlan = {
   strength: StrengthSlot[];
   cardio?: CardioSlot;
   sport?: SportSlot;
+  musculacao?: StrengthSlot[];
+  condicionamento?: TrainingBlockSlot[];
+  core?: TrainingBlockSlot[];
+  mobilidade?: TrainingBlockSlot[];
+  recuperacao?: TrainingBlockSlot[];
+  programa?: TrainingProgram;
+  importedWorkoutId?: string;
   rest?: boolean;
   status: "pendente" | "concluido" | "hoje";
 };
 
 export const WEEKDAY_KEYS = ["seg", "ter", "qua", "qui", "sex", "sab", "dom"] as const;
-export type WeekdayKey = typeof WEEKDAY_KEYS[number];
+export type WeekdayKey = (typeof WEEKDAY_KEYS)[number];
 export const WEEKDAY_LABELS: Record<WeekdayKey, string> = {
-  seg: "Segunda", ter: "Terça", qua: "Quarta", qui: "Quinta",
-  sex: "Sexta", sab: "Sábado", dom: "Domingo",
+  seg: "Segunda",
+  ter: "Terça",
+  qua: "Quarta",
+  qui: "Quinta",
+  sex: "Sexta",
+  sab: "Sábado",
+  dom: "Domingo",
 };
 export const WEEKDAY_SHORT: Record<WeekdayKey, string> = {
-  seg: "SEG", ter: "TER", qua: "QUA", qui: "QUI", sex: "SEX", sab: "SÁB", dom: "DOM",
+  seg: "SEG",
+  ter: "TER",
+  qua: "QUA",
+  qui: "QUI",
+  sex: "SEX",
+  sab: "SÁB",
+  dom: "DOM",
 };
 
 export type SportIntensity = "Leve" | "Moderada" | "Alta" | "Competitiva";
@@ -558,10 +2195,29 @@ export type SportPractice = {
   intensity: SportIntensity;
 };
 
-export const RESTRICTION_OPTIONS = ["Nenhuma", "Joelho", "Ombro", "Lombar", "Quadril", "Tornozelo", "Outro"] as const;
-export type Restriction = typeof RESTRICTION_OPTIONS[number];
+export const RESTRICTION_OPTIONS = [
+  "Nenhuma",
+  "Joelho",
+  "Ombro",
+  "Lombar",
+  "Quadril",
+  "Tornozelo",
+  "Outro",
+] as const;
+export type Restriction = (typeof RESTRICTION_OPTIONS)[number];
 
-export const SPORT_OPTIONS = ["Futebol", "Corrida", "Ciclismo", "Basquete", "Vôlei", "Tênis", "Crossfit", "Artes Marciais", "Natação", "Outro"] as const;
+export const SPORT_OPTIONS = [
+  "Futebol",
+  "Corrida",
+  "Ciclismo",
+  "Basquete",
+  "Vôlei",
+  "Tênis",
+  "Crossfit",
+  "Artes Marciais",
+  "Natação",
+  "Outro",
+] as const;
 
 export type Profile = {
   name: string;
@@ -570,7 +2226,7 @@ export type Profile = {
   height: number; // cm
   weight: number; // kg
   bodyFat?: number;
-  goal: "Emagrecimento" | "Hipertrofia" | "Ganho de Força" | "Condicionamento" | "Saúde Geral" | "Performance Esportiva" | "Performance Híbrida" | "Corrida 5km" | "Corrida 10km" | "Meia Maratona" | "Futebol";
+  goal: string;
   strengthLevel: "Iniciante" | "Intermediário" | "Avançado";
   runLevel: "Iniciante" | "Intermediário" | "Avançado";
   daysPerWeek: number; // derivado de gymDays
@@ -581,6 +2237,8 @@ export type Profile = {
   gymDays?: WeekdayKey[];
   sports?: SportPractice[];
   restrictionsList?: Restriction[];
+  focoMusculacao?: number;
+  focoCondicionamento?: number;
   /** Legados (compatibilidade) */
   sport?: string;
   restrictions?: string;
@@ -600,7 +2258,7 @@ export type CheckInMood = "Excelente" | "Bem" | "Cansado" | "Exausto";
 export type CheckIn = { date: string; mood: CheckInMood; note?: string };
 
 export type ImportedExercise = { name: string; sets: number; reps: string; notes?: string };
-export type ImportedDay = { name: string; exercises: ImportedExercise[] };
+export type ImportedDay = { name: string; weekday?: WeekdayKey; exercises: ImportedExercise[] };
 export type ImportedWorkout = {
   id: string;
   createdAt: string;
@@ -675,7 +2333,11 @@ const defaultState: AppState = {
   eventGoals: [],
 };
 
-export const EXTRA_ACTIVITY_TYPES: { name: string; icon: string; category: "esporte" | "cardio" | "outro" }[] = [
+export const EXTRA_ACTIVITY_TYPES: {
+  name: string;
+  icon: string;
+  category: "esporte" | "cardio" | "outro";
+}[] = [
   { name: "Futebol", icon: "⚽", category: "esporte" },
   { name: "Futsal", icon: "🥅", category: "esporte" },
   { name: "Basquete", icon: "🏀", category: "esporte" },
@@ -708,7 +2370,9 @@ export function loadState(): AppState {
     const raw = localStorage.getItem("hybrid_trainer_state_v1");
     if (!raw) return defaultState;
     return { ...defaultState, ...JSON.parse(raw) };
-  } catch { return defaultState; }
+  } catch {
+    return defaultState;
+  }
 }
 
 export function saveState(s: AppState) {
@@ -725,7 +2389,15 @@ export function resetState() {
 function fmtDate(d: Date): string {
   return d.toISOString().slice(0, 10);
 }
-const WEEKDAYS = ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"];
+const WEEKDAYS = [
+  "Domingo",
+  "Segunda-feira",
+  "Terça-feira",
+  "Quarta-feira",
+  "Quinta-feira",
+  "Sexta-feira",
+  "Sábado",
+];
 
 export function generatePlan(profile: Profile, startDate = new Date()): DayPlan[] {
   const days: DayPlan[] = [];
@@ -753,7 +2425,9 @@ export function generatePlan(profile: Profile, startDate = new Date()): DayPlan[
     const prev = WEEKDAY_KEYS[(i + 6) % 7];
     const next = WEEKDAY_KEYS[(i + 1) % 7];
     const drains = (key: WeekdayKey) =>
-      (sportsByDay.get(key) ?? []).some((s) => sportDrainsLegs(s.name) && intensityWeight(s.intensity) >= 2);
+      (sportsByDay.get(key) ?? []).some(
+        (s) => sportDrainsLegs(s.name) && intensityWeight(s.intensity) >= 2,
+      );
     if (drains(prev) || drains(next) || drains(k)) noLegOn.add(k);
   });
 
@@ -772,7 +2446,16 @@ export function generatePlan(profile: Profile, startDate = new Date()): DayPlan[
     const sportsToday = sportsByDay.get(key) ?? [];
 
     if (!isGym && sportsToday.length === 0) {
-      days.push({ date, weekday, title: "Descanso Ativo", focus: "Recuperação", estimatedMin: 0, strength: [], rest: true, status: statusFor(date) });
+      days.push({
+        date,
+        weekday,
+        title: "Descanso Ativo",
+        focus: "Recuperação",
+        estimatedMin: 0,
+        strength: [],
+        rest: true,
+        status: statusFor(date),
+      });
       continue;
     }
 
@@ -803,24 +2486,35 @@ export function generatePlan(profile: Profile, startDate = new Date()): DayPlan[
     }
 
     days.push({
-      date, weekday,
-      title, focus,
+      date,
+      weekday,
+      title,
+      focus,
       estimatedMin: Math.min(180, estimatedMin),
       strength,
       sport,
       status: statusFor(date),
     });
   }
-  return days;
+  return days.map((day, index) =>
+    createTrainingProgram(day, profile, index, {
+      movementCategory: movementCategoryForSlot,
+      getExercise,
+    }),
+  );
 }
 
 function fallbackGymDays(n: number): WeekdayKey[] {
   const map: Record<number, WeekdayKey[]> = {
-    1: ["qua"], 2: ["seg","qui"], 3: ["seg","qua","sex"],
-    4: ["seg","ter","qui","sex"], 5: ["seg","ter","qua","qui","sex"],
-    6: ["seg","ter","qua","qui","sex","sab"], 7: [...WEEKDAY_KEYS],
+    1: ["qua"],
+    2: ["seg", "qui"],
+    3: ["seg", "qua", "sex"],
+    4: ["seg", "ter", "qui", "sex"],
+    5: ["seg", "ter", "qua", "qui", "sex"],
+    6: ["seg", "ter", "qua", "qui", "sex", "sab"],
+    7: [...WEEKDAY_KEYS],
   };
-  return map[Math.max(1, Math.min(7, n))] ?? ["seg","qua","sex"];
+  return map[Math.max(1, Math.min(7, n))] ?? ["seg", "qua", "sex"];
 }
 
 function intensityWeight(i: SportIntensity): number {
@@ -829,13 +2523,28 @@ function intensityWeight(i: SportIntensity): number {
 
 function sportDrainsLegs(name: string): boolean {
   const lower = name.toLowerCase();
-  return ["futebol","corrida","ciclismo","basquete","vôlei","volei","tênis","tenis","artes marciais","crossfit"].some((s) => lower.includes(s));
+  return [
+    "futebol",
+    "corrida",
+    "ciclismo",
+    "basquete",
+    "vôlei",
+    "volei",
+    "tênis",
+    "tenis",
+    "artes marciais",
+    "crossfit",
+  ].some((s) => lower.includes(s));
 }
 
 function sportDuration(s: SportPractice): number {
-  const base = s.name.toLowerCase().includes("futebol") ? 90
-    : s.name.toLowerCase().includes("corrida") ? 45
-    : s.name.toLowerCase().includes("ciclismo") ? 75 : 60;
+  const base = s.name.toLowerCase().includes("futebol")
+    ? 90
+    : s.name.toLowerCase().includes("corrida")
+      ? 45
+      : s.name.toLowerCase().includes("ciclismo")
+        ? 75
+        : 60;
   const mult = s.intensity === "Competitiva" ? 1.1 : s.intensity === "Leve" ? 0.8 : 1;
   return Math.round(base * mult);
 }
@@ -864,9 +2573,7 @@ function assignSplits(
   if (n <= 2) {
     rotation = ["Full Body A", "Full Body B"];
   } else if (n === 3) {
-    rotation = skipLegsHard
-      ? ["Push", "Pull", "Upper"]
-      : ["Push", "Pull", "Pernas"];
+    rotation = skipLegsHard ? ["Push", "Pull", "Upper"] : ["Push", "Pull", "Pernas"];
   } else if (n === 4) {
     rotation = skipLegsHard
       ? ["Upper", "Lower", "Upper", "Core + Posterior"]
@@ -905,7 +2612,14 @@ function statusFor(date: string): DayPlan["status"] {
 type Goal = Profile["goal"];
 type Level = Profile["strengthLevel"];
 
-function setsRepsRest(goal: Goal): { sets: number; reps: string; rest: string; isoSets: number; isoReps: string; isoRest: string } {
+function setsRepsRest(goal: Goal): {
+  sets: number;
+  reps: string;
+  rest: string;
+  isoSets: number;
+  isoReps: string;
+  isoRest: string;
+} {
   switch (goal) {
     case "Ganho de Força":
       return { sets: 5, reps: "4-6", rest: "150s", isoSets: 3, isoReps: "8-10", isoRest: "75s" };
@@ -927,30 +2641,197 @@ function setsRepsRest(goal: Goal): { sets: number; reps: string; rest: string; i
 
 // Tabela ordenada: composto primeiro, isoladores depois. IDs sincronizados com o catálogo EXERCISES.
 const POOL: Record<MuscleGroup, { compound: string[]; iso: string[] }> = {
-  Peito:        { compound: ["supino-reto-barra","supino-reto-halteres","supino-incl-halteres","supino-incl-barra","supino-decl-barra","supino-maquina","chest-press","flexao","flexao-inclinada"],
-                  iso: ["crucifixo-reto","crucifixo-incl","peck-deck","crossover-alto","crossover-medio","crossover-baixo"] },
-  Costas:       { compound: ["barra-fixa-neutra","barra-fixa-pronada","remada-curvada","remada-cavalinho","t-bar-row","remada-unilateral","puxada-frontal","puxada-neutra","puxada-supinada","puxada-fechada","remada-baixa","remada-sentado-cabo","remada-articulada","remada-smith","remada-invertida"],
-                  iso: ["pulldown-estendido","pull-over"] },
-  Ombros:       { compound: ["desenvolvimento-halteres","desenvolvimento-barra","arnold-press","desenvolvimento-maquina","desenvolvimento-smith","desenvolvimento-militar","remada-alta"],
-                  iso: ["elevacao-lateral","elevacao-lateral-uni","elevacao-frontal","crucifixo-inverso","deltoide-post-maquina","face-pull"] },
-  Bíceps:       { compound: [],
-                  iso: ["rosca-direta","rosca-barra-w","rosca-alternada","rosca-martelo","rosca-scott","rosca-scott-maquina","rosca-inclinada","rosca-cabo","rosca-concentrada","rosca-uni-polia","rosca-martelo-corda","rosca-inversa"] },
-  Tríceps:      { compound: ["mergulho-paralelas","triceps-banco"],
-                  iso: ["triceps-pulley","triceps-corda","triceps-barra-reta","triceps-frances","triceps-testa","triceps-maquina","triceps-unilateral","coice-triceps"] },
-  Quadríceps:   { compound: ["agachamento-livre","agachamento-smith","agachamento-frontal","hack-machine","leg-press-45","leg-press-horizontal","agachamento-goblet","agachamento-sumo","bulgarian","afundo","passada","avanco-andando","step-up"],
-                  iso: ["cadeira-extensora","sissy-squat"] },
-  Posterior:    { compound: ["terra-romeno","stiff-barra","stiff-halteres","good-morning","levantamento-terra","terra-sumo"],
-                  iso: ["mesa-flexora","flexora-sentada","flexora-em-pe","flexora-uni","nordic-curl","glute-ham-raise"] },
-  Glúteos:      { compound: ["hip-thrust","hip-thrust-maquina","agachamento-sumo-profundo","step-up-gluteo"],
-                  iso: ["gluteo-maquina","coice-polia","abducao-maquina","abducao-polia","kickback-maquina","ponte-gluteos"] },
-  Panturrilhas: { compound: [],
-                  iso: ["panturrilha-em-pe","panturrilha-sentado","panturrilha-leg-press","panturrilha-smith","panturrilha-unilateral","panturrilha-degrau","donkey-calf","panturrilha-maquina"] },
-  Abdômen:      { compound: ["ab-wheel","mountain-climber","v-up","woodchopper"],
-                  iso: ["prancha","prancha-lateral","crunch","crunch-maquina","sit-up","infra-banco","infra-suspenso","elevacao-pernas","russian-twist","bicicleta-abdominal","hollow-hold"] },
-  Antebraço:    { compound: ["farmer-walk"],
-                  iso: ["rosca-punho","rosca-punho-inversa","dead-hang","wrist-roller","pegada-pinca"] },
-  Cardio:       { compound: ["cardio-corrida-moderada","cardio-corrida-leve","cardio-bike-erg","cardio-remo","cardio-eliptico","cardio-caminhada-inclinada"],
-                  iso: ["cardio-caminhada","cardio-spinning","cardio-escada","cardio-corda","cardio-air-bike","cardio-hiit-esteira","cardio-hiit-bike","cardio-sprint","cardio-corrida-intensa"] },
+  Peito: {
+    compound: [
+      "supino-reto-barra",
+      "supino-reto-halteres",
+      "supino-incl-halteres",
+      "supino-incl-barra",
+      "supino-decl-barra",
+      "supino-maquina",
+      "chest-press",
+      "flexao",
+      "flexao-inclinada",
+    ],
+    iso: [
+      "crucifixo-reto",
+      "crucifixo-incl",
+      "peck-deck",
+      "crossover-alto",
+      "crossover-medio",
+      "crossover-baixo",
+    ],
+  },
+  Costas: {
+    compound: [
+      "barra-fixa-neutra",
+      "barra-fixa-pronada",
+      "remada-curvada",
+      "remada-cavalinho",
+      "t-bar-row",
+      "remada-unilateral",
+      "puxada-frontal",
+      "puxada-neutra",
+      "puxada-supinada",
+      "puxada-fechada",
+      "remada-baixa",
+      "remada-sentado-cabo",
+      "remada-articulada",
+      "remada-smith",
+      "remada-invertida",
+    ],
+    iso: ["pulldown-estendido", "pull-over"],
+  },
+  Ombros: {
+    compound: [
+      "desenvolvimento-halteres",
+      "desenvolvimento-barra",
+      "arnold-press",
+      "desenvolvimento-maquina",
+      "desenvolvimento-smith",
+      "desenvolvimento-militar",
+      "remada-alta",
+    ],
+    iso: [
+      "elevacao-lateral",
+      "elevacao-lateral-uni",
+      "elevacao-frontal",
+      "crucifixo-inverso",
+      "deltoide-post-maquina",
+      "face-pull",
+    ],
+  },
+  Bíceps: {
+    compound: [],
+    iso: [
+      "rosca-direta",
+      "rosca-barra-w",
+      "rosca-alternada",
+      "rosca-martelo",
+      "rosca-scott",
+      "rosca-scott-maquina",
+      "rosca-inclinada",
+      "rosca-cabo",
+      "rosca-concentrada",
+      "rosca-uni-polia",
+      "rosca-martelo-corda",
+      "rosca-inversa",
+    ],
+  },
+  Tríceps: {
+    compound: ["mergulho-paralelas", "triceps-banco"],
+    iso: [
+      "triceps-pulley",
+      "triceps-corda",
+      "triceps-barra-reta",
+      "triceps-frances",
+      "triceps-testa",
+      "triceps-maquina",
+      "triceps-unilateral",
+      "coice-triceps",
+    ],
+  },
+  Quadríceps: {
+    compound: [
+      "agachamento-livre",
+      "agachamento-smith",
+      "agachamento-frontal",
+      "hack-machine",
+      "leg-press-45",
+      "leg-press-horizontal",
+      "agachamento-goblet",
+      "agachamento-sumo",
+      "bulgarian",
+      "afundo",
+      "passada",
+      "avanco-andando",
+      "step-up",
+    ],
+    iso: ["cadeira-extensora", "sissy-squat"],
+  },
+  Posterior: {
+    compound: [
+      "terra-romeno",
+      "stiff-barra",
+      "stiff-halteres",
+      "good-morning",
+      "levantamento-terra",
+      "terra-sumo",
+    ],
+    iso: [
+      "mesa-flexora",
+      "flexora-sentada",
+      "flexora-em-pe",
+      "flexora-uni",
+      "nordic-curl",
+      "glute-ham-raise",
+    ],
+  },
+  Glúteos: {
+    compound: ["hip-thrust", "hip-thrust-maquina", "agachamento-sumo-profundo", "step-up-gluteo"],
+    iso: [
+      "gluteo-maquina",
+      "coice-polia",
+      "abducao-maquina",
+      "abducao-polia",
+      "kickback-maquina",
+      "ponte-gluteos",
+    ],
+  },
+  Panturrilhas: {
+    compound: [],
+    iso: [
+      "panturrilha-em-pe",
+      "panturrilha-sentado",
+      "panturrilha-leg-press",
+      "panturrilha-smith",
+      "panturrilha-unilateral",
+      "panturrilha-degrau",
+      "donkey-calf",
+      "panturrilha-maquina",
+    ],
+  },
+  Abdômen: {
+    compound: ["ab-wheel", "mountain-climber", "v-up", "woodchopper"],
+    iso: [
+      "prancha",
+      "prancha-lateral",
+      "crunch",
+      "crunch-maquina",
+      "sit-up",
+      "infra-banco",
+      "infra-suspenso",
+      "elevacao-pernas",
+      "russian-twist",
+      "bicicleta-abdominal",
+      "hollow-hold",
+    ],
+  },
+  Antebraço: {
+    compound: ["farmer-walk"],
+    iso: ["rosca-punho", "rosca-punho-inversa", "dead-hang", "wrist-roller", "pegada-pinca"],
+  },
+  Cardio: {
+    compound: [
+      "cardio-corrida-moderada",
+      "cardio-corrida-leve",
+      "cardio-bike-erg",
+      "cardio-remo",
+      "cardio-eliptico",
+      "cardio-caminhada-inclinada",
+    ],
+    iso: [
+      "cardio-caminhada",
+      "cardio-spinning",
+      "cardio-escada",
+      "cardio-corda",
+      "cardio-air-bike",
+      "cardio-hiit-esteira",
+      "cardio-hiit-bike",
+      "cardio-sprint",
+      "cardio-corrida-intensa",
+    ],
+  },
 };
 
 // Mapeia split → grupos principais / secundários
@@ -966,7 +2847,10 @@ function splitTargets(split: string): { primary: MuscleGroup[]; secondary: Muscl
     return { primary: ["Posterior", "Glúteos"], secondary: ["Panturrilhas", "Abdômen"] };
   }
   if (s.includes("quadríceps") || s === "pernas" || s.startsWith("pernas")) {
-    return { primary: ["Quadríceps", "Posterior"], secondary: ["Glúteos", "Panturrilhas", "Abdômen"] };
+    return {
+      primary: ["Quadríceps", "Posterior"],
+      secondary: ["Glúteos", "Panturrilhas", "Abdômen"],
+    };
   }
   if (s.includes("ombros + braços")) {
     return { primary: ["Ombros"], secondary: ["Bíceps", "Tríceps"] };
@@ -978,13 +2862,19 @@ function splitTargets(split: string): { primary: MuscleGroup[]; secondary: Muscl
     return { primary: ["Posterior", "Abdômen"], secondary: ["Glúteos"] };
   }
   if (s === "lower" || s.startsWith("lower")) {
-    return { primary: ["Quadríceps", "Posterior"], secondary: ["Glúteos", "Panturrilhas", "Abdômen"] };
+    return {
+      primary: ["Quadríceps", "Posterior"],
+      secondary: ["Glúteos", "Panturrilhas", "Abdômen"],
+    };
   }
   if (s.includes("upper")) {
     return { primary: ["Peito", "Costas"], secondary: ["Ombros", "Bíceps", "Tríceps"] };
   }
   // Full body
-  return { primary: ["Quadríceps", "Peito", "Costas"], secondary: ["Ombros", "Posterior", "Abdômen"] };
+  return {
+    primary: ["Quadríceps", "Peito", "Costas"],
+    secondary: ["Ombros", "Posterior", "Abdômen"],
+  };
 }
 
 function pickStrength(split: string, profile: Profile): StrengthSlot[] {
@@ -1055,16 +2945,178 @@ function pickStrength(split: string, profile: Profile): StrengthSlot[] {
   return result.slice(0, finalMax);
 }
 
+function movementCategoryForSlot(slot: StrengthSlot): string {
+  const ex = getExercise(slot.exerciseId);
+  const id = slot.exerciseId;
+  if (
+    [
+      "desenvolvimento-barra",
+      "desenvolvimento-halteres",
+      "desenvolvimento-maquina",
+      "desenvolvimento-smith",
+      "arnold-press",
+      "desenvolvimento-militar",
+    ].includes(id)
+  )
+    return "desenvolvimento";
+  if (["elevacao-lateral", "elevacao-lateral-uni"].includes(id)) return "deltoide-lateral";
+  if (["face-pull", "crucifixo-inverso", "deltoide-post-maquina"].includes(id))
+    return "deltoide-posterior";
+  return ex?.pattern ?? ex?.group ?? slot.exerciseId;
+}
 
-
-
+function matchExerciseId(name: string): string | undefined {
+  const n = normalizeText(name);
+  return EXERCISES.find((exercise) => normalizeText(exercise.name) === n)?.id;
+}
+export function createPlanFromImportedWorkout(
+  profile: Profile | undefined,
+  workout: ImportedWorkout,
+  startDate = new Date(),
+): DayPlan[] {
+  const baseProfile =
+    profile ??
+    ({
+      name: "Atleta",
+      sex: "Outro",
+      age: 30,
+      height: 170,
+      weight: 70,
+      goal: "Hibrido",
+      strengthLevel: "Intermediario",
+      runLevel: "Intermediario",
+      daysPerWeek: workout.days.length || 3,
+      timePerDay: 60,
+      location: "Academia",
+      equipment: [],
+    } as Profile);
+  const base = generatePlan(baseProfile, startDate);
+  const used = new Set<WeekdayKey>();
+  const mapped = [...base];
+  workout.days.forEach((importedDay, index) => {
+    const key =
+      importedDay.weekday ??
+      weekdayFromText(importedDay.name) ??
+      WEEKDAY_KEYS[index % WEEKDAY_KEYS.length];
+    used.add(key);
+    const dayIndex = WEEKDAY_KEYS.indexOf(key);
+    if (dayIndex < 0) return;
+    const strength = importedDay.exercises.map((ex, exIndex) => ({
+      exerciseId: matchExerciseId(ex.name) ?? "importado-" + index + "-" + exIndex,
+      name: ex.name,
+      sets: ex.sets,
+      reps: ex.reps,
+      rest: ex.notes ?? "60s",
+    }));
+    mapped[dayIndex] = {
+      ...mapped[dayIndex],
+      title: importedDay.name,
+      focus: workout.split || "Ficha importada",
+      strength,
+      musculacao: strength,
+      rest: false,
+      estimatedMin: Math.max(20, strength.length * 8),
+      importedWorkoutId: workout.id,
+    };
+  });
+  return mapped.map((day, index) =>
+    used.has(WEEKDAY_KEYS[index])
+      ? day
+      : {
+          ...day,
+          title: "Descanso Ativo",
+          focus: "Recuperacao",
+          strength: [],
+          musculacao: [],
+          condicionamento: [],
+          core: [],
+          mobilidade: day.mobilidade,
+          recuperacao: day.recuperacao?.length ? day.recuperacao : [pickRecovery(index)],
+          rest: true,
+          estimatedMin: 0,
+          importedWorkoutId: workout.id,
+        },
+  );
+}
 
 export function getExercise(id: string): Exercise | undefined {
   return EXERCISES.find((e) => e.id === id);
 }
 
+function normalizeExerciseMediaKey(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+const exerciseMediaLibrary: Record<string, ExerciseMedia> = {
+  "supino-reto": { type: "image", url: "/exercises/supino-reto.svg" },
+  "supino-reto-barra": { type: "image", url: "/exercises/supino-reto.svg" },
+  "supino-reto-halteres": { type: "image", url: "/exercises/supino-reto.svg" },
+  "supino-inclinado": { type: "image", url: "/exercises/supino-inclinado.svg" },
+  "supino-inclinado-barra": { type: "image", url: "/exercises/supino-inclinado.svg" },
+  "supino-inclinado-halteres": { type: "image", url: "/exercises/supino-inclinado.svg" },
+  "puxada-alta": { type: "image", url: "/exercises/puxada-alta.svg" },
+  "puxada-neutra": { type: "image", url: "/exercises/puxada-neutra.svg" },
+  "remada-baixa": { type: "image", url: "/exercises/remada-baixa.svg" },
+  "remada-curvada": { type: "image", url: "/exercises/remada-baixa.svg" },
+  "remada-maquina-apoio": { type: "image", url: "/exercises/remada-baixa.svg" },
+  "remada-unilateral": { type: "image", url: "/exercises/remada-unilateral.svg" },
+  "face-pull": { type: "image", url: "/exercises/face-pull.svg" },
+  "rosca-direta": { type: "image", url: "/exercises/rosca-direta.svg" },
+  "rosca-martelo": { type: "image", url: "/exercises/rosca-martelo.svg" },
+  "leg-press": { type: "image", url: "/exercises/leg-press.svg" },
+  "cadeira-extensora": { type: "image", url: "/exercises/cadeira-extensora.svg" },
+  extensora: { type: "image", url: "/exercises/cadeira-extensora.svg" },
+  "mesa-flexora": { type: "image", url: "/exercises/mesa-flexora.svg" },
+  "elevacao-pelvica": { type: "image", url: "/exercises/elevacao-pelvica.svg" },
+  panturrilha: { type: "image", url: "/exercises/panturrilha.svg" },
+  stiff: { type: "image", url: "/exercises/stiff.svg" },
+  "agachamento-smith": { type: "image", url: "/exercises/agachamento-smith.svg" },
+  crossover: { type: "image", url: "/exercises/crossover.svg" },
+  "desenvolvimento-maquina": {
+    type: "image",
+    url: "/exercises/desenvolvimento-maquina.svg",
+  },
+  "desenvolvimento-halteres": {
+    type: "image",
+    url: "/exercises/desenvolvimento-halteres.svg",
+  },
+  "elevacao-lateral": { type: "image", url: "/exercises/elevacao-lateral.svg" },
+  "triceps-corda": { type: "image", url: "/exercises/triceps-corda.svg" },
+  "triceps-frances": { type: "image", url: "/exercises/triceps-frances.svg" },
+};
+
+export function exerciseMediaPath(idOrName: string): ExerciseMedia | undefined {
+  const direct = getExercise(idOrName);
+  if (direct) {
+    return direct.media ?? { type: "image", url: `/exercises/${direct.id}.svg` };
+  }
+
+  const normalized = normalizeExerciseMediaKey(idOrName);
+  const media = exerciseMediaLibrary[normalized];
+  if (media) return media;
+
+  const matched = EXERCISES.find((exercise) => {
+    const name = normalizeExerciseMediaKey(exercise.name);
+    return name === normalized || exercise.id === normalized;
+  });
+
+  if (matched) {
+    return matched.media ?? { type: "image", url: `/exercises/${matched.id}.svg` };
+  }
+
+  return undefined;
+}
+
 /** Retorna alternativas com o mesmo padrão de movimento. */
-export function findAlternatives(id: string, opts?: { level?: Level; equipment?: string[] }): Exercise[] {
+export function findAlternatives(
+  id: string,
+  opts?: { level?: Level; equipment?: string[] },
+): Exercise[] {
   const base = getExercise(id);
   if (!base) return [];
   return EXERCISES.filter((e) => {
@@ -1107,16 +3159,25 @@ export function suggestNextLoad(
   const m = targetReps.match(/(\d+)\s*[-–]\s*(\d+)/);
   const minR = m ? parseInt(m[1], 10) : parseInt(targetReps, 10) || 8;
   const maxR = m ? parseInt(m[2], 10) : minR + 2;
-  const allHit = valid.length >= Math.max(2, lastSets.length - 1) && valid.every((s) => s.reps >= maxR);
+  const allHit =
+    valid.length >= Math.max(2, lastSets.length - 1) && valid.every((s) => s.reps >= maxR);
   const allBelow = valid.every((s) => s.reps < minR);
   const ex = getExercise(exerciseId);
   const isHeavyBarbell = ex?.type === "composto" && /barra|terra|agachamento/i.test(ex.name);
   const step = isHeavyBarbell ? 5 : 2.5;
   if (allHit) {
-    return { suggested: baseWeight + step, delta: step, reason: `Você bateu o topo da faixa (${maxR}). Suba ${step}kg.` };
+    return {
+      suggested: baseWeight + step,
+      delta: step,
+      reason: `Você bateu o topo da faixa (${maxR}). Suba ${step}kg.`,
+    };
   }
   if (allBelow) {
-    return { suggested: Math.max(0, baseWeight - step), delta: -step, reason: `Reps abaixo de ${minR}. Reduza ${step}kg para consolidar técnica.` };
+    return {
+      suggested: Math.max(0, baseWeight - step),
+      delta: -step,
+      reason: `Reps abaixo de ${minR}. Reduza ${step}kg para consolidar técnica.`,
+    };
   }
   return { suggested: baseWeight, delta: 0, reason: "Mantenha a carga e busque mais repetições." };
 }
@@ -1133,31 +3194,38 @@ export function computeStreak(completedDates: string[]): number {
   return streak;
 }
 
-export function today(): string { return fmtDate(new Date()); }
+export function today(): string {
+  return fmtDate(new Date());
+}
 
 export const ACHIEVEMENTS: { id: string; label: string; check: (s: AppState) => boolean }[] = [
   { id: "first", label: "Primeiro Treino", check: (s) => s.completedDates.length >= 1 },
   { id: "streak3", label: "3 Dias Seguidos", check: (s) => computeStreak(s.completedDates) >= 3 },
   { id: "streak7", label: "Semana Perfeita", check: (s) => computeStreak(s.completedDates) >= 7 },
   { id: "ten", label: "10 Sessões", check: (s) => s.completedDates.length >= 10 },
-  { id: "run5", label: "Primeiros 5km", check: (s) => Object.values(s.runLogs).some((r) => r.distance >= 5) },
+  {
+    id: "run5",
+    label: "Primeiros 5km",
+    check: (s) => Object.values(s.runLogs).some((r) => r.distance >= 5),
+  },
   { id: "extra5", label: "5 Atividades Extras", check: (s) => s.extraActivities.length >= 5 },
 ];
 
 // ---------- Recuperação / Prontidão ----------
 
 export type RecoveryScore = {
-  muscular: number;       // 0-100
-  cardio: number;         // 0-100
+  muscular: number; // 0-100
+  cardio: number; // 0-100
   fatigue: "Baixa" | "Moderada" | "Alta";
   readiness: "Alta" | "Média" | "Baixa";
-  weeklyLoad: number;     // unidades arbitrárias
+  weeklyLoad: number; // unidades arbitrárias
   recommendations: string[];
 };
 
 function daysAgo(iso: string): number {
   const d = new Date(iso + "T00:00:00");
-  const now = new Date(); now.setHours(0, 0, 0, 0);
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
   return Math.max(0, Math.round((now.getTime() - d.getTime()) / 86400000));
 }
 
@@ -1168,14 +3236,16 @@ export function computeRecovery(state: AppState): RecoveryScore {
   let extras = 0;
 
   for (let i = 0; i < 7; i++) {
-    const d = new Date(); d.setDate(d.getDate() - i);
+    const d = new Date();
+    d.setDate(d.getDate() - i);
     const date = d.toISOString().slice(0, 10);
     const decay = 1 - i / 8; // mais recente pesa mais
 
     const dayLogs = state.logs[date];
     if (dayLogs) {
       const vol = Object.values(dayLogs).reduce(
-        (a, sets) => a + sets.reduce((b, s) => b + (s ? s.weight * s.reps : 0), 0), 0,
+        (a, sets) => a + sets.reduce((b, s) => b + (s ? s.weight * s.reps : 0), 0),
+        0,
       );
       musc += (vol / 1000) * decay; // 1000kg ≈ 1 unidade
     }
@@ -1207,10 +3277,17 @@ export function computeRecovery(state: AppState): RecoveryScore {
 
   // Last check-in modifier
   const lastCheckIn = [...state.checkIns].sort((a, b) => b.date.localeCompare(a.date))[0];
-  const moodPenalty = lastCheckIn?.mood === "Exausto" ? 25 : lastCheckIn?.mood === "Cansado" ? 12 : 0;
+  const moodPenalty =
+    lastCheckIn?.mood === "Exausto" ? 25 : lastCheckIn?.mood === "Cansado" ? 12 : 0;
 
-  const muscular = Math.max(20, Math.min(100, Math.round(100 - musc * 4 + restBonus - moodPenalty)));
-  const cardioR = Math.max(20, Math.min(100, Math.round(100 - cardio * 3 + restBonus - moodPenalty / 2)));
+  const muscular = Math.max(
+    20,
+    Math.min(100, Math.round(100 - musc * 4 + restBonus - moodPenalty)),
+  );
+  const cardioR = Math.max(
+    20,
+    Math.min(100, Math.round(100 - cardio * 3 + restBonus - moodPenalty / 2)),
+  );
 
   const avg = (muscular + cardioR) / 2;
   const fatigue: RecoveryScore["fatigue"] = avg > 75 ? "Baixa" : avg > 55 ? "Moderada" : "Alta";
@@ -1219,36 +3296,58 @@ export function computeRecovery(state: AppState): RecoveryScore {
   const recommendations: string[] = [];
   if (muscular < 60) recommendations.push("Priorize sono de 8h e alongamento ativo hoje.");
   if (cardioR < 60) recommendations.push("Evite cardio intenso — opte por Z2 leve ou descanso.");
-  if (extras > 6) recommendations.push("Atividades extras altas — reduza volume de musculação 20%.");
-  if (sinceLastTraining >= 3) recommendations.push("Você está descansado — boa janela para sessão de alta intensidade.");
-  if (lastCheckIn?.mood === "Exausto") recommendations.push("Check-in indica exaustão — considere dia off.");
-  if (!recommendations.length) recommendations.push("Tudo equilibrado. Mantenha hidratação e proteína (1.6g/kg).");
+  if (extras > 6)
+    recommendations.push("Atividades extras altas — reduza volume de musculação 20%.");
+  if (sinceLastTraining >= 3)
+    recommendations.push("Você está descansado — boa janela para sessão de alta intensidade.");
+  if (lastCheckIn?.mood === "Exausto")
+    recommendations.push("Check-in indica exaustão — considere dia off.");
+  if (!recommendations.length)
+    recommendations.push("Tudo equilibrado. Mantenha hidratação e proteína (1.6g/kg).");
 
-  return { muscular, cardio: cardioR, fatigue, readiness, weeklyLoad: Math.round(weeklyLoad), recommendations };
+  return {
+    muscular,
+    cardio: cardioR,
+    fatigue,
+    readiness,
+    weeklyLoad: Math.round(weeklyLoad),
+    recommendations,
+  };
 }
 
 // ---------- PRs e histórico por exercício ----------
 
-export type ExerciseHistoryPoint = { date: string; maxWeight: number; volume: number; reps: number };
+export type ExerciseHistoryPoint = {
+  date: string;
+  maxWeight: number;
+  volume: number;
+  reps: number;
+};
 
 export function exerciseHistory(state: AppState, exerciseId: string): ExerciseHistoryPoint[] {
   const out: ExerciseHistoryPoint[] = [];
-  Object.keys(state.logs).sort().forEach((date) => {
-    const sets = state.logs[date]?.[exerciseId];
-    if (!sets?.length) return;
-    let maxW = 0, vol = 0, totalReps = 0;
-    sets.forEach((s) => {
-      if (!s) return;
-      maxW = Math.max(maxW, s.weight);
-      vol += s.weight * s.reps;
-      totalReps += s.reps;
+  Object.keys(state.logs)
+    .sort()
+    .forEach((date) => {
+      const sets = state.logs[date]?.[exerciseId];
+      if (!sets?.length) return;
+      let maxW = 0,
+        vol = 0,
+        totalReps = 0;
+      sets.forEach((s) => {
+        if (!s) return;
+        maxW = Math.max(maxW, s.weight);
+        vol += s.weight * s.reps;
+        totalReps += s.reps;
+      });
+      out.push({ date, maxWeight: maxW, volume: vol, reps: totalReps });
     });
-    out.push({ date, maxWeight: maxW, volume: vol, reps: totalReps });
-  });
   return out;
 }
 
-export function personalRecords(state: AppState): { exerciseId: string; name: string; weight: number; reps: number; date: string }[] {
+export function personalRecords(
+  state: AppState,
+): { exerciseId: string; name: string; weight: number; reps: number; date: string }[] {
   const prs: Record<string, { weight: number; reps: number; date: string }> = {};
   Object.entries(state.logs).forEach(([date, day]) => {
     Object.entries(day).forEach(([exId, sets]) => {
@@ -1260,7 +3359,11 @@ export function personalRecords(state: AppState): { exerciseId: string; name: st
     });
   });
   return Object.entries(prs)
-    .map(([exerciseId, v]) => ({ exerciseId, name: getExercise(exerciseId)?.name ?? exerciseId, ...v }))
+    .map(([exerciseId, v]) => ({
+      exerciseId,
+      name: getExercise(exerciseId)?.name ?? exerciseId,
+      ...v,
+    }))
     .sort((a, b) => b.weight - a.weight);
 }
 
@@ -1269,7 +3372,8 @@ export function uid(): string {
 }
 
 export function buildAISnapshot(state: AppState) {
-  const since = new Date(); since.setDate(since.getDate() - 30);
+  const since = new Date();
+  since.setDate(since.getDate() - 30);
   const sinceIso = since.toISOString().slice(0, 10);
   const strengthSessions = Object.keys(state.logs).filter((d) => d >= sinceIso).length;
   const cardioKm = Object.entries(state.runLogs)
@@ -1277,40 +3381,66 @@ export function buildAISnapshot(state: AppState) {
     .reduce((s, [, r]) => s + r.distance, 0);
   const extraActivities = state.extraActivities
     .filter((a) => a.date >= sinceIso)
-    .map((a) => ({ type: a.type, durationMin: a.durationMin, intensity: a.intensity, date: a.date }));
+    .map((a) => ({
+      type: a.type,
+      durationMin: a.durationMin,
+      intensity: a.intensity,
+      date: a.date,
+    }));
   const checkIns = state.checkIns.filter((c) => c.date >= sinceIso);
 
   // Progression per exercise
   const exMap: Record<string, { first: number; last: number; name: string }> = {};
-  Object.keys(state.logs).sort().forEach((date) => {
-    if (date < sinceIso) return;
-    Object.entries(state.logs[date]).forEach(([exId, sets]) => {
-      const max = sets.reduce((m, s) => (s && s.weight > m ? s.weight : m), 0);
-      if (!max) return;
-      const name = getExercise(exId)?.name ?? exId;
-      if (!exMap[exId]) exMap[exId] = { first: max, last: max, name };
-      else exMap[exId].last = max;
+  Object.keys(state.logs)
+    .sort()
+    .forEach((date) => {
+      if (date < sinceIso) return;
+      Object.entries(state.logs[date]).forEach(([exId, sets]) => {
+        const max = sets.reduce((m, s) => (s && s.weight > m ? s.weight : m), 0);
+        if (!max) return;
+        const name = getExercise(exId)?.name ?? exId;
+        if (!exMap[exId]) exMap[exId] = { first: max, last: max, name };
+        else exMap[exId].last = max;
+      });
     });
-  });
   const topExercises = Object.values(exMap)
-    .map((e) => ({ name: e.name, progressionPct: Math.round(((e.last - e.first) / Math.max(1, e.first)) * 100) }))
+    .map((e) => ({
+      name: e.name,
+      progressionPct: Math.round(((e.last - e.first) / Math.max(1, e.first)) * 100),
+    }))
     .sort((a, b) => Math.abs(b.progressionPct) - Math.abs(a.progressionPct))
     .slice(0, 5);
 
   const rec = computeRecovery(state);
 
   return {
-    profile: state.profile ? {
-      goal: state.profile.goal,
-      sport: state.profile.sport,
-      sports: state.profile.sports,
-      gymDays: state.profile.gymDays,
-      restrictions: state.profile.restrictionsList,
-      daysPerWeek: state.profile.daysPerWeek,
-    } : undefined,
-    last30days: { strengthSessions, cardioKm: Math.round(cardioKm * 10) / 10, extraActivities, checkIns, topExercises, streak: state.streak },
-    recovery: { muscular: rec.muscular, cardio: rec.cardio, readiness: rec.readiness, fatigue: rec.fatigue },
-    importedWorkouts: state.importedWorkouts.slice(-3).map((w) => ({ name: w.name, split: w.split, hasCardio: w.hasCardio, mode: w.mode })),
+    profile: state.profile
+      ? {
+          goal: state.profile.goal,
+          sport: state.profile.sport,
+          sports: state.profile.sports,
+          gymDays: state.profile.gymDays,
+          restrictions: state.profile.restrictionsList,
+          daysPerWeek: state.profile.daysPerWeek,
+        }
+      : undefined,
+    last30days: {
+      strengthSessions,
+      cardioKm: Math.round(cardioKm * 10) / 10,
+      extraActivities,
+      checkIns,
+      topExercises,
+      streak: state.streak,
+    },
+    recovery: {
+      muscular: rec.muscular,
+      cardio: rec.cardio,
+      readiness: rec.readiness,
+      fatigue: rec.fatigue,
+    },
+    importedWorkouts: state.importedWorkouts
+      .slice(-3)
+      .map((w) => ({ name: w.name, split: w.split, hasCardio: w.hasCardio, mode: w.mode })),
   };
 }
 
@@ -1327,48 +3457,70 @@ export type WeeklyLoad = {
 };
 
 export function computeWeeklyLoad(state: AppState): WeeklyLoad {
-  let strength = 0, cardio = 0, sport = 0;
+  let strength = 0,
+    cardio = 0,
+    sport = 0;
   const daily: { date: string; load: number }[] = [];
   const dailyMap: Record<string, number> = {};
 
   for (let i = 0; i < 7; i++) {
-    const d = new Date(); d.setDate(d.getDate() - i);
+    const d = new Date();
+    d.setDate(d.getDate() - i);
     const date = d.toISOString().slice(0, 10);
     let dayLoad = 0;
 
     const dayLogs = state.logs[date];
     if (dayLogs) {
       const vol = Object.values(dayLogs).reduce(
-        (a, sets) => a + sets.reduce((b, s) => b + (s ? s.weight * s.reps : 0), 0), 0,
+        (a, sets) => a + sets.reduce((b, s) => b + (s ? s.weight * s.reps : 0), 0),
+        0,
       );
       const u = vol / 1000;
-      strength += u; dayLoad += u;
+      strength += u;
+      dayLoad += u;
     }
     const run = state.runLogs[date];
-    if (run) { cardio += run.distance; dayLoad += run.distance; }
+    if (run) {
+      cardio += run.distance;
+      dayLoad += run.distance;
+    }
 
-    state.extraActivities.filter((a) => a.date === date).forEach((a) => {
-      const load = (a.durationMin / 60) * intensityLoad(a.intensity) * 3;
-      if (["Corrida","Caminhada","Ciclismo","Natação","Trilha"].includes(a.type)) cardio += load;
-      else sport += load;
-      dayLoad += load;
-    });
+    state.extraActivities
+      .filter((a) => a.date === date)
+      .forEach((a) => {
+        const load = (a.durationMin / 60) * intensityLoad(a.intensity) * 3;
+        if (["Corrida", "Caminhada", "Ciclismo", "Natação", "Trilha"].includes(a.type))
+          cardio += load;
+        else sport += load;
+        dayLoad += load;
+      });
     dailyMap[date] = dayLoad;
   }
-  Object.keys(dailyMap).sort().forEach((date) => daily.push({ date, load: Math.round(dailyMap[date] * 10) / 10 }));
+  Object.keys(dailyMap)
+    .sort()
+    .forEach((date) => daily.push({ date, load: Math.round(dailyMap[date] * 10) / 10 }));
 
   // ACWR: 7d acute vs 28d chronic
   const acute = strength + cardio + sport;
   let chronic = 0;
   for (let i = 0; i < 28; i++) {
-    const d = new Date(); d.setDate(d.getDate() - i);
+    const d = new Date();
+    d.setDate(d.getDate() - i);
     const date = d.toISOString().slice(0, 10);
     const dl = state.logs[date];
-    if (dl) chronic += Object.values(dl).reduce((a, sets) => a + sets.reduce((b, s) => b + (s ? s.weight * s.reps : 0), 0), 0) / 1000;
-    const r = state.runLogs[date]; if (r) chronic += r.distance;
-    state.extraActivities.filter((a) => a.date === date).forEach((a) => {
-      chronic += (a.durationMin / 60) * intensityLoad(a.intensity) * 3;
-    });
+    if (dl)
+      chronic +=
+        Object.values(dl).reduce(
+          (a, sets) => a + sets.reduce((b, s) => b + (s ? s.weight * s.reps : 0), 0),
+          0,
+        ) / 1000;
+    const r = state.runLogs[date];
+    if (r) chronic += r.distance;
+    state.extraActivities
+      .filter((a) => a.date === date)
+      .forEach((a) => {
+        chronic += (a.durationMin / 60) * intensityLoad(a.intensity) * 3;
+      });
   }
   const chronicAvg = chronic / 4 || 0.0001;
   const acwr = Math.round((acute / chronicAvg) * 100) / 100;
@@ -1380,7 +3532,9 @@ export function computeWeeklyLoad(state: AppState): WeeklyLoad {
     strength: Math.round(strength * 10) / 10,
     cardio: Math.round(cardio * 10) / 10,
     sport: Math.round(sport * 10) / 10,
-    daily, acwr, status,
+    daily,
+    acwr,
+    status,
   };
 }
 
@@ -1395,18 +3549,24 @@ export function muscleBalance(state: AppState): MuscleImbalance {
   // Sum sets per muscle group in last 14 days using logs
   const counts: Record<string, number> = {};
   for (let i = 0; i < 14; i++) {
-    const d = new Date(); d.setDate(d.getDate() - i);
+    const d = new Date();
+    d.setDate(d.getDate() - i);
     const date = d.toISOString().slice(0, 10);
     const dl = state.logs[date];
     if (!dl) continue;
     Object.entries(dl).forEach(([exId, sets]) => {
-      const ex = getExercise(exId); if (!ex) return;
+      const ex = getExercise(exId);
+      if (!ex) return;
       counts[ex.group] = (counts[ex.group] || 0) + sets.filter(Boolean).length;
     });
   }
   const total = Object.values(counts).reduce((a, b) => a + b, 0) || 1;
   const byGroup = Object.entries(counts)
-    .map(([group, sets]) => ({ group: group as MuscleGroup, sets, pct: Math.round((sets / total) * 100) }))
+    .map(([group, sets]) => ({
+      group: group as MuscleGroup,
+      sets,
+      pct: Math.round((sets / total) * 100),
+    }))
     .sort((a, b) => b.sets - a.sets);
 
   const warnings: MuscleImbalance["warnings"] = [];
@@ -1417,25 +3577,52 @@ export function muscleBalance(state: AppState): MuscleImbalance {
   const pull = get("Costas") + get("Bíceps");
   if (push > 0 && pull > 0) {
     const r = push / pull;
-    if (r > 1.6) warnings.push({ kind: "ratio", detail: `Push/Pull em ${r.toFixed(1)}:1 — adicione costas para evitar desequilíbrio postural.` });
-    if (r < 0.6) warnings.push({ kind: "ratio", detail: `Pull/Push em ${(1/r).toFixed(1)}:1 — adicione peito/ombro.` });
+    if (r > 1.6)
+      warnings.push({
+        kind: "ratio",
+        detail: `Push/Pull em ${r.toFixed(1)}:1 — adicione costas para evitar desequilíbrio postural.`,
+      });
+    if (r < 0.6)
+      warnings.push({
+        kind: "ratio",
+        detail: `Pull/Push em ${(1 / r).toFixed(1)}:1 — adicione peito/ombro.`,
+      });
   }
 
   // Quad vs posterior
   const quad = get("Quadríceps");
   const post = get("Posterior") + get("Glúteos");
   if (quad > 0 && post > 0 && quad / post > 1.8)
-    warnings.push({ kind: "ratio", detail: `Quadríceps ${(quad/post).toFixed(1)}x posterior — risco para joelho. Inclua stiff/elevação pélvica.` });
+    warnings.push({
+      kind: "ratio",
+      detail: `Quadríceps ${(quad / post).toFixed(1)}x posterior — risco para joelho. Inclua stiff/elevação pélvica.`,
+    });
 
   // Déficit absoluto
-  ["Costas","Posterior","Glúteos","Abdômen"].forEach((g) => {
-    if (total > 10 && get(g) === 0) warnings.push({ kind: "deficit", group: g, detail: `Sem volume em ${g} nas últimas 2 semanas.` });
+  ["Costas", "Posterior", "Glúteos", "Abdômen"].forEach((g) => {
+    if (total > 10 && get(g) === 0)
+      warnings.push({
+        kind: "deficit",
+        group: g,
+        detail: `Sem volume em ${g} nas últimas 2 semanas.`,
+      });
   });
 
   // Excesso
-  byGroup.forEach((b) => { if (b.pct > 35) warnings.push({ kind: "excesso", group: b.group, detail: `${b.group} concentra ${b.pct}% do volume — distribua mais.` }); });
+  byGroup.forEach((b) => {
+    if (b.pct > 35)
+      warnings.push({
+        kind: "excesso",
+        group: b.group,
+        detail: `${b.group} concentra ${b.pct}% do volume — distribua mais.`,
+      });
+  });
 
-  if (!warnings.length) warnings.push({ kind: "deficit", detail: "Distribuição muscular equilibrada nas últimas 2 semanas. ✅" });
+  if (!warnings.length)
+    warnings.push({
+      kind: "deficit",
+      detail: "Distribuição muscular equilibrada nas últimas 2 semanas. ✅",
+    });
   return { byGroup, warnings };
 }
 
@@ -1456,7 +3643,8 @@ export function performanceIndex(state: AppState): PerformanceIndex {
   // Progressão (20): top exercise progression
   const snap = buildAISnapshot(state);
   const avgProg = snap.last30days.topExercises.length
-    ? snap.last30days.topExercises.reduce((a, e) => a + Math.max(0, e.progressionPct), 0) / snap.last30days.topExercises.length
+    ? snap.last30days.topExercises.reduce((a, e) => a + Math.max(0, e.progressionPct), 0) /
+      snap.last30days.topExercises.length
     : 0;
   const progression = Math.min(20, Math.round((avgProg / 10) * 20));
 
@@ -1466,19 +3654,27 @@ export function performanceIndex(state: AppState): PerformanceIndex {
 
   // Equilíbrio (15)
   const bal = muscleBalance(state);
-  const severeWarnings = bal.warnings.filter((w) => w.kind === "ratio" || w.kind === "deficit").length;
+  const severeWarnings = bal.warnings.filter(
+    (w) => w.kind === "ratio" || w.kind === "deficit",
+  ).length;
   const balance = Math.max(0, 15 - severeWarnings * 4);
 
   // Carga adequada (10)
   const wl = computeWeeklyLoad(state);
-  const loadScore = wl.status === "Ótima" ? 10 : wl.status === "Alta" ? 7 : wl.status === "Baixa" ? 4 : 2;
+  const loadScore =
+    wl.status === "Ótima" ? 10 : wl.status === "Alta" ? 7 : wl.status === "Baixa" ? 4 : 2;
 
   const score = consistency + progression + recovery + balance + loadScore;
-  const grade: PerformanceIndex["grade"] = score >= 85 ? "S" : score >= 70 ? "A" : score >= 55 ? "B" : score >= 40 ? "C" : "D";
+  const grade: PerformanceIndex["grade"] =
+    score >= 85 ? "S" : score >= 70 ? "A" : score >= 55 ? "B" : score >= 40 ? "C" : "D";
 
   // Trend: compare with previous 14d
-  const prev14 = state.completedDates.filter((d) => { const a = daysAgo(d); return a > 14 && a <= 28; }).length;
-  const trend: PerformanceIndex["trend"] = last14 > prev14 + 1 ? "subindo" : last14 < prev14 - 1 ? "caindo" : "estável";
+  const prev14 = state.completedDates.filter((d) => {
+    const a = daysAgo(d);
+    return a > 14 && a <= 28;
+  }).length;
+  const trend: PerformanceIndex["trend"] =
+    last14 > prev14 + 1 ? "subindo" : last14 < prev14 - 1 ? "caindo" : "estável";
 
   return {
     score,
@@ -1496,6 +3692,7 @@ export function performanceIndex(state: AppState): PerformanceIndex {
 
 export function daysUntil(iso: string): number {
   const d = new Date(iso + "T00:00:00");
-  const now = new Date(); now.setHours(0, 0, 0, 0);
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
   return Math.round((d.getTime() - now.getTime()) / 86400000);
 }

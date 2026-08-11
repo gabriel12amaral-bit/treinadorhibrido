@@ -9,70 +9,25 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as RecuperacaoRouteImport } from './routes/recuperacao'
-import { Route as PerfilRouteImport } from './routes/perfil'
-import { Route as OnboardingRouteImport } from './routes/onboarding'
-import { Route as ObjetivosRouteImport } from './routes/objetivos'
-import { Route as InsightsRouteImport } from './routes/insights'
-import { Route as ExerciciosRouteImport } from './routes/exercicios'
-import { Route as EvolucaoRouteImport } from './routes/evolucao'
-import { Route as DesempenhoRouteImport } from './routes/desempenho'
-import { Route as CoachRouteImport } from './routes/coach'
-import { Route as CalendarioRouteImport } from './routes/calendario'
-import { Route as AtividadeRouteImport } from './routes/atividade'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AtividadeRouteImport } from './routes/atividade'
+import { Route as CalendarioRouteImport } from './routes/calendario'
+import { Route as CoachRouteImport } from './routes/coach'
+import { Route as DesempenhoRouteImport } from './routes/desempenho'
+import { Route as EvolucaoRouteImport } from './routes/evolucao'
+import { Route as ExerciciosRouteImport } from './routes/exercicios'
+import { Route as InsightsRouteImport } from './routes/insights'
+import { Route as ObjetivosRouteImport } from './routes/objetivos'
+import { Route as OnboardingRouteImport } from './routes/onboarding'
+import { Route as PerfilRouteImport } from './routes/perfil'
+import { Route as RecuperacaoRouteImport } from './routes/recuperacao'
+import { Route as ExercicioIdRouteImport } from './routes/exercicio.$id'
 import { Route as TreinosIndexRouteImport } from './routes/treinos.index'
 import { Route as TreinosImportarRouteImport } from './routes/treinos.importar'
-import { Route as ExercicioIdRouteImport } from './routes/exercicio.$id'
 
-const RecuperacaoRoute = RecuperacaoRouteImport.update({
-  id: '/recuperacao',
-  path: '/recuperacao',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PerfilRoute = PerfilRouteImport.update({
-  id: '/perfil',
-  path: '/perfil',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OnboardingRoute = OnboardingRouteImport.update({
-  id: '/onboarding',
-  path: '/onboarding',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ObjetivosRoute = ObjetivosRouteImport.update({
-  id: '/objetivos',
-  path: '/objetivos',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const InsightsRoute = InsightsRouteImport.update({
-  id: '/insights',
-  path: '/insights',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ExerciciosRoute = ExerciciosRouteImport.update({
-  id: '/exercicios',
-  path: '/exercicios',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const EvolucaoRoute = EvolucaoRouteImport.update({
-  id: '/evolucao',
-  path: '/evolucao',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DesempenhoRoute = DesempenhoRouteImport.update({
-  id: '/desempenho',
-  path: '/desempenho',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CoachRoute = CoachRouteImport.update({
-  id: '/coach',
-  path: '/coach',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CalendarioRoute = CalendarioRouteImport.update({
-  id: '/calendario',
-  path: '/calendario',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AtividadeRoute = AtividadeRouteImport.update({
@@ -80,9 +35,59 @@ const AtividadeRoute = AtividadeRouteImport.update({
   path: '/atividade',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const CalendarioRoute = CalendarioRouteImport.update({
+  id: '/calendario',
+  path: '/calendario',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CoachRoute = CoachRouteImport.update({
+  id: '/coach',
+  path: '/coach',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DesempenhoRoute = DesempenhoRouteImport.update({
+  id: '/desempenho',
+  path: '/desempenho',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EvolucaoRoute = EvolucaoRouteImport.update({
+  id: '/evolucao',
+  path: '/evolucao',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ExerciciosRoute = ExerciciosRouteImport.update({
+  id: '/exercicios',
+  path: '/exercicios',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InsightsRoute = InsightsRouteImport.update({
+  id: '/insights',
+  path: '/insights',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ObjetivosRoute = ObjetivosRouteImport.update({
+  id: '/objetivos',
+  path: '/objetivos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardingRoute = OnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PerfilRoute = PerfilRouteImport.update({
+  id: '/perfil',
+  path: '/perfil',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RecuperacaoRoute = RecuperacaoRouteImport.update({
+  id: '/recuperacao',
+  path: '/recuperacao',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ExercicioIdRoute = ExercicioIdRouteImport.update({
+  id: '/exercicio/$id',
+  path: '/exercicio/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TreinosIndexRoute = TreinosIndexRouteImport.update({
@@ -93,11 +98,6 @@ const TreinosIndexRoute = TreinosIndexRouteImport.update({
 const TreinosImportarRoute = TreinosImportarRouteImport.update({
   id: '/treinos/importar',
   path: '/treinos/importar',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ExercicioIdRoute = ExercicioIdRouteImport.update({
-  id: '/exercicio/$id',
-  path: '/exercicio/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -227,74 +227,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/recuperacao': {
-      id: '/recuperacao'
-      path: '/recuperacao'
-      fullPath: '/recuperacao'
-      preLoaderRoute: typeof RecuperacaoRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/perfil': {
-      id: '/perfil'
-      path: '/perfil'
-      fullPath: '/perfil'
-      preLoaderRoute: typeof PerfilRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/onboarding': {
-      id: '/onboarding'
-      path: '/onboarding'
-      fullPath: '/onboarding'
-      preLoaderRoute: typeof OnboardingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/objetivos': {
-      id: '/objetivos'
-      path: '/objetivos'
-      fullPath: '/objetivos'
-      preLoaderRoute: typeof ObjetivosRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/insights': {
-      id: '/insights'
-      path: '/insights'
-      fullPath: '/insights'
-      preLoaderRoute: typeof InsightsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/exercicios': {
-      id: '/exercicios'
-      path: '/exercicios'
-      fullPath: '/exercicios'
-      preLoaderRoute: typeof ExerciciosRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/evolucao': {
-      id: '/evolucao'
-      path: '/evolucao'
-      fullPath: '/evolucao'
-      preLoaderRoute: typeof EvolucaoRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/desempenho': {
-      id: '/desempenho'
-      path: '/desempenho'
-      fullPath: '/desempenho'
-      preLoaderRoute: typeof DesempenhoRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/coach': {
-      id: '/coach'
-      path: '/coach'
-      fullPath: '/coach'
-      preLoaderRoute: typeof CoachRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/calendario': {
-      id: '/calendario'
-      path: '/calendario'
-      fullPath: '/calendario'
-      preLoaderRoute: typeof CalendarioRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/atividade': {
@@ -304,11 +241,81 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AtividadeRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/calendario': {
+      id: '/calendario'
+      path: '/calendario'
+      fullPath: '/calendario'
+      preLoaderRoute: typeof CalendarioRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/coach': {
+      id: '/coach'
+      path: '/coach'
+      fullPath: '/coach'
+      preLoaderRoute: typeof CoachRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/desempenho': {
+      id: '/desempenho'
+      path: '/desempenho'
+      fullPath: '/desempenho'
+      preLoaderRoute: typeof DesempenhoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/evolucao': {
+      id: '/evolucao'
+      path: '/evolucao'
+      fullPath: '/evolucao'
+      preLoaderRoute: typeof EvolucaoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/exercicios': {
+      id: '/exercicios'
+      path: '/exercicios'
+      fullPath: '/exercicios'
+      preLoaderRoute: typeof ExerciciosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/insights': {
+      id: '/insights'
+      path: '/insights'
+      fullPath: '/insights'
+      preLoaderRoute: typeof InsightsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/objetivos': {
+      id: '/objetivos'
+      path: '/objetivos'
+      fullPath: '/objetivos'
+      preLoaderRoute: typeof ObjetivosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding': {
+      id: '/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof OnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/perfil': {
+      id: '/perfil'
+      path: '/perfil'
+      fullPath: '/perfil'
+      preLoaderRoute: typeof PerfilRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/recuperacao': {
+      id: '/recuperacao'
+      path: '/recuperacao'
+      fullPath: '/recuperacao'
+      preLoaderRoute: typeof RecuperacaoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/exercicio/$id': {
+      id: '/exercicio/$id'
+      path: '/exercicio/$id'
+      fullPath: '/exercicio/$id'
+      preLoaderRoute: typeof ExercicioIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/treinos/': {
@@ -323,13 +330,6 @@ declare module '@tanstack/react-router' {
       path: '/treinos/importar'
       fullPath: '/treinos/importar'
       preLoaderRoute: typeof TreinosImportarRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/exercicio/$id': {
-      id: '/exercicio/$id'
-      path: '/exercicio/$id'
-      fullPath: '/exercicio/$id'
-      preLoaderRoute: typeof ExercicioIdRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -355,3 +355,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

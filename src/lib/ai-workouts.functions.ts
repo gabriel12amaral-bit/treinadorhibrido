@@ -17,6 +17,7 @@ const WorkoutSchema = z.object({
   days: z.array(
     z.object({
       name: z.string(),
+      weekday: z.enum(["seg", "ter", "qua", "qui", "sex", "sab", "dom"]).optional(),
       exercises: z.array(
         z.object({
           name: z.string(),
@@ -43,6 +44,7 @@ export const parseWorkoutImport = createServerFn({ method: "POST" })
     const system = `Você é um treinador esportivo. Analise o conteúdo (ficha de treino) e extraia:
 - Lista de treinos (Treino A, B, C…) com nome.
 - Cada exercício com séries e repetições.
+- Se a ficha mencionar segunda, terça, quarta, quinta, sexta, sábado ou domingo, preencha também o campo weekday com seg, ter, qua, qui, sex, sab ou dom.
 - Frequência semanal e divisão (ex: A/B/C, push/pull/legs, full body).
 - Volume semanal total e por grupo muscular (peito, costas, pernas, ombros, braços, core).
 - Detecte se há musculação e se há treino cardiovascular.
@@ -54,12 +56,27 @@ Use português. Seja objetivo. Se algo não estiver claro, infira de forma conse
     } else if (data.kind === "image") {
       content = [
         { type: "text", text: "Extraia o treino desta imagem." },
-        { type: "image_url", image_url: { url: data.payload.startsWith("data:") ? data.payload : `data:${data.mime || "image/png"};base64,${data.payload}` } },
+        {
+          type: "image_url",
+          image_url: {
+            url: data.payload.startsWith("data:")
+              ? data.payload
+              : `data:${data.mime || "image/png"};base64,${data.payload}`,
+          },
+        },
       ];
     } else {
       content = [
         { type: "text", text: "Extraia o treino deste PDF." },
-        { type: "file", file: { filename: data.filename || "treino.pdf", file_data: data.payload.startsWith("data:") ? data.payload : `data:application/pdf;base64,${data.payload}` } },
+        {
+          type: "file",
+          file: {
+            filename: data.filename || "treino.pdf",
+            file_data: data.payload.startsWith("data:")
+              ? data.payload
+              : `data:application/pdf;base64,${data.payload}`,
+          },
+        },
       ];
     }
 
@@ -102,8 +119,10 @@ export const analyzeWorkoutMode = createServerFn({ method: "POST" })
 
     const modeGuide = {
       manter: "Apenas confirme o treino. Não sugira mudanças. Resuma a estrutura em 2 frases.",
-      complementar: "Sugira complementos que estão faltando (ex: cardio, mobilidade, esporte) sem alterar o treino existente. Máx 4 sugestões.",
-      otimizar: "Analise frequência, recuperação, volume e o esporte do usuário. Sugira melhorias concretas. Máx 5 sugestões.",
+      complementar:
+        "Sugira complementos que estão faltando (ex: cardio, mobilidade, esporte) sem alterar o treino existente. Máx 4 sugestões.",
+      otimizar:
+        "Analise frequência, recuperação, volume e o esporte do usuário. Sugira melhorias concretas. Máx 5 sugestões.",
     } as const;
 
     const { experimental_output } = await generateText({
@@ -122,12 +141,24 @@ const InsightsInput = z.object({
     last30days: z.object({
       strengthSessions: z.number(),
       cardioKm: z.number(),
-      extraActivities: z.array(z.object({ type: z.string(), durationMin: z.number(), intensity: z.string(), date: z.string() })),
+      extraActivities: z.array(
+        z.object({
+          type: z.string(),
+          durationMin: z.number(),
+          intensity: z.string(),
+          date: z.string(),
+        }),
+      ),
       checkIns: z.array(z.object({ date: z.string(), mood: z.string() })),
       topExercises: z.array(z.object({ name: z.string(), progressionPct: z.number() })),
       streak: z.number(),
     }),
-    recovery: z.object({ muscular: z.number(), cardio: z.number(), readiness: z.string(), fatigue: z.string() }),
+    recovery: z.object({
+      muscular: z.number(),
+      cardio: z.number(),
+      readiness: z.string(),
+      fatigue: z.string(),
+    }),
     importedWorkouts: z.array(z.any()).optional(),
   }),
 });
@@ -162,20 +193,24 @@ export const generateAIInsights = createServerFn({ method: "POST" })
 const ReplanInput = z.object({
   snapshot: z.any(),
   currentPlan: z.array(z.any()),
-  event: z.object({ title: z.string(), type: z.string(), date: z.string(), daysUntil: z.number() }).optional(),
+  event: z
+    .object({ title: z.string(), type: z.string(), date: z.string(), daysUntil: z.number() })
+    .optional(),
   imbalances: z.array(z.string()).optional(),
   weeklyLoad: z.object({ status: z.string(), acwr: z.number() }).optional(),
 });
 
 const ReplanSchema = z.object({
   summary: z.string(),
-  changes: z.array(z.object({
-    date: z.string(),
-    weekday: z.string(),
-    title: z.string(),
-    focus: z.string(),
-    reason: z.string(),
-  })),
+  changes: z.array(
+    z.object({
+      date: z.string(),
+      weekday: z.string(),
+      title: z.string(),
+      focus: z.string(),
+      reason: z.string(),
+    }),
+  ),
   priorityAdvice: z.string(),
 });
 
@@ -184,14 +219,29 @@ export const replanWeek = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const ai = getAIGateway("replanWeek");
 
-    const eventCtx = data.event ? `Evento alvo: ${data.event.title} (${data.event.type}) em ${data.event.daysUntil} dias.` : "Sem evento alvo definido.";
-    const imbCtx = data.imbalances?.length ? `Desequilíbrios detectados: ${data.imbalances.join("; ")}.` : "Sem desequilíbrios graves.";
-    const loadCtx = data.weeklyLoad ? `Carga atual: ${data.weeklyLoad.status} (ACWR ${data.weeklyLoad.acwr}).` : "";
+    const eventCtx = data.event
+      ? `Evento alvo: ${data.event.title} (${data.event.type}) em ${data.event.daysUntil} dias.`
+      : "Sem evento alvo definido.";
+    const imbCtx = data.imbalances?.length
+      ? `Desequilíbrios detectados: ${data.imbalances.join("; ")}.`
+      : "Sem desequilíbrios graves.";
+    const loadCtx = data.weeklyLoad
+      ? `Carga atual: ${data.weeklyLoad.status} (ACWR ${data.weeklyLoad.acwr}).`
+      : "";
 
     const { experimental_output } = await generateText({
       model: ai.gateway(ai.model("fast")),
       system: `Você é um treinador híbrido que reorganiza a semana do atleta com base em recuperação, carga, desequilíbrios e evento alvo. Para cada dia da próxima semana, sugira título, foco e razão (1 frase). Seja prático. Português brasileiro.`,
-      prompt: `${eventCtx}\n${imbCtx}\n${loadCtx}\n\nPlano atual:\n${JSON.stringify(data.currentPlan.map((d: any) => ({ date: d.date, weekday: d.weekday, title: d.title, focus: d.focus })), null, 2)}\n\nSnapshot:\n${JSON.stringify(data.snapshot, null, 2)}`,
+      prompt: `${eventCtx}\n${imbCtx}\n${loadCtx}\n\nPlano atual:\n${JSON.stringify(
+        data.currentPlan.map((d: any) => ({
+          date: d.date,
+          weekday: d.weekday,
+          title: d.title,
+          focus: d.focus,
+        })),
+        null,
+        2,
+      )}\n\nSnapshot:\n${JSON.stringify(data.snapshot, null, 2)}`,
       experimental_output: Output.object({ schema: ReplanSchema }),
     }).catch((error) => rethrowAIError("replanWeek", error));
 
