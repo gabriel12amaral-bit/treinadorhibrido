@@ -178,7 +178,9 @@ function TodayPage() {
               <ul className="space-y-2.5">
                 {day.strength.map((s, i) => {
                   const ex = getExercise(s.exerciseId);
-                  if (!ex) return null;
+                  const image = ex?.image ?? "HT";
+                  const name = ex?.name ?? s.name ?? "Exercicio importado";
+                  const group = ex?.group ?? day.focus ?? "Treino";
                   return (
                     <li key={s.exerciseId}>
                       <Link

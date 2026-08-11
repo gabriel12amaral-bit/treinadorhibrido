@@ -176,6 +176,7 @@ function CalendarPage() {
         day={selectedDay}
         extras={selectedDay ? (byDate[selectedDay.date] ?? []) : []}
         onClose={() => setSelectedDay(null)}
+        onSave={updatePlanDay}
       />
 
       <div className="mt-6 grid grid-cols-2 gap-2">
