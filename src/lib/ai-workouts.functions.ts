@@ -57,12 +57,11 @@ Use português. Seja objetivo. Se algo não estiver claro, infira de forma conse
       content = [
         { type: "text", text: "Extraia o treino desta imagem." },
         {
-          type: "image_url",
-          image_url: {
-            url: data.payload.startsWith("data:")
-              ? data.payload
-              : `data:${data.mime || "image/png"};base64,${data.payload}`,
-          },
+          type: "image",
+          image: data.payload.startsWith("data:")
+            ? data.payload
+            : `data:${data.mime || "image/png"};base64,${data.payload}`,
+          mediaType: data.mime || "image/png",
         },
       ];
     } else {
@@ -70,12 +69,11 @@ Use português. Seja objetivo. Se algo não estiver claro, infira de forma conse
         { type: "text", text: "Extraia o treino deste PDF." },
         {
           type: "file",
-          file: {
-            filename: data.filename || "treino.pdf",
-            file_data: data.payload.startsWith("data:")
-              ? data.payload
-              : `data:application/pdf;base64,${data.payload}`,
-          },
+          data: data.payload.startsWith("data:")
+            ? data.payload
+            : `data:application/pdf;base64,${data.payload}`,
+          mediaType: data.mime || "application/pdf",
+          filename: data.filename || "treino.pdf",
         },
       ];
     }
